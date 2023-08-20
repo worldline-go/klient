@@ -18,7 +18,7 @@ go get github.com/worldline-go/klient
 Create a new client with a base url.
 
 ```go
-client, err := klient.NewClient(klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"))
+client, err := klient.New(klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"))
 if err != nil {
     // handle error
 }

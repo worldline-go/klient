@@ -4,17 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"reflect"
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/rs/zerolog/log"
 )
 
 type TestRequest struct {
 	ID string `json:"id"`
+
+	header http.Header `json:"-"`
 }
 
 func (TestRequest) Method() string {
@@ -38,10 +40,14 @@ func (r TestRequest) Validate() error {
 }
 
 func (r TestRequest) Header() http.Header {
-	v := http.Header{}
-	v.Set("X-Info", "test")
+	header := http.Header{}
+	header.Set("X-Info", "test")
 
-	return v
+	for k, v := range r.header {
+		header[k] = v
+	}
+
+	return header
 }
 
 func TestClient_Do(t *testing.T) {
@@ -53,7 +59,7 @@ func TestClient_Do(t *testing.T) {
 		if retryCount > 0 {
 			retryCount--
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(`{"error": "internal server error Ipsum eiusmod non officia cillum est ullamco qui est pariatur id. Tempor incididunt excepteur officia aute ullamco in incididunt. Dolor veniam reprehenderit non aliqua. Anim laboris ut commodo fugiat exercitation cupidatat exercitation consectetur aliqua consequat sint est eu occaecat. Esse qui exercitation magna consectetur pariatur ut adipisicing aute qui ad ea incididunt sint eu. Mollit sunt do ipsum sunt ex proident duis. Cupidatat cillum nulla sint cupidatat cupidatat enim et commodo duis qui sunt eiusmod commodo. Aliqua elit cupidatat nulla enim excepteur cupidatat tempor aliquip tempor consequat qui. Commodo veniam excepteur cillum Lorem minim. Magna ipsum veniam ipsum cillum. Mollit ullamco veniam qui elit quis duis amet laboris in eiusmod. Irure est adipisicing reprehenderit laboris occaecat anim. Excepteur fugiat laborum fugiat fugiat deserunt ut ex adipisicing culpa occaecat pariatur et aliqua. Duis proident officia sint adipisicing aute aute incididunt quis esse. Quis ex sint magna pariatur exercitation aliqua do reprehenderit occaecat aute est dolor voluptate reprehenderit. "}`))
+			_, _ = w.Write([]byte(`{"error": "internal server error Ipsum eiusmod non officia cillum est ullamco qui est pariatur id. Tempor incididunt excepteur officia aute ullamco in incididunt. Dolor veniam reprehenderit non aliqua. Anim laboris ut commodo fugiat exercitation cupidatat exercitation consectetur aliqua consequat sint est eu occaecat. Esse qui exercitation magna consectetur pariatur ut adipisicing aute qui ad ea incididunt sint eu. Mollit sunt do ipsum sunt ex proident duis. Cupidatat cillum nulla sint cupidatat cupidatat enim et commodo duis qui sunt eiusmod commodo. Aliqua elit cupidatat nulla enim excepteur cupidatat tempor aliquip tempor consequat qui. Commodo veniam excepteur cillum Lorem minim. Magna ipsum veniam ipsum cillum. Mollit ullamco veniam qui elit quis duis amet laboris in eiusmod. Irure est adipisicing reprehenderit laboris occaecat anim. Excepteur fugiat laborum fugiat fugiat deserunt ut ex adipisicing culpa occaecat pariatur et aliqua. Duis proident officia sint adipisicing aute aute incididunt quis esse. Quis ex sint magna pariatur exercitation aliqua do reprehenderit occaecat aute est dolor voluptate reprehenderit. "}`))
 
 			return
 		}
@@ -61,21 +67,21 @@ func TestClient_Do(t *testing.T) {
 		// check request method
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "invalid request method"}`))
+			_, _ = w.Write([]byte(`{"error": "invalid request method"}`))
 			return
 		}
 
 		// check request path
 		if r.URL.Path != "/api/v1/test" {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "invalid request path"}`))
+			_, _ = w.Write([]byte(`{"error": "invalid request path"}`))
 			return
 		}
 
 		// check request header
 		if r.Header.Get("X-Info") != "test" {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "invalid request header"}`))
+			_, _ = w.Write([]byte(`{"error": "invalid request header"}`))
 			return
 		}
 
@@ -83,14 +89,14 @@ func TestClient_Do(t *testing.T) {
 		var m map[string]interface{}
 		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "invalid request body"}`))
+			_, _ = w.Write([]byte(`{"error": "invalid request body"}`))
 			return
 		}
 
 		// check request body
 		if m["id"] != "123" {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": "invalid id"}`))
+			_, _ = w.Write([]byte(`{"error": "invalid id"}`))
 			return
 		}
 
@@ -98,66 +104,46 @@ func TestClient_Do(t *testing.T) {
 		if extraCheck != nil {
 			if err := extraCheck(r); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf(`{"error": "%v"}`, err)))
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error": "%v"}`, err)))
 				return
 			}
 		}
 
 		// write response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"request_id": "123+"}`))
+		_, _ = w.Write([]byte(`{"request_id": "123+"}`))
 	}))
 
 	defer httpServer.Close()
 
-	httpxClient, err := NewClient(
-		OptionClient.WithBaseURL(httpServer.URL),
-		OptionClient.WithRetryMax(2),
-	)
-	if err != nil {
-		t.Errorf("NewClient() error = %v", err)
-		return
-	}
-
-	type fields struct {
-		HttpClient *http.Client
-		BaseURL    *url.URL
-	}
 	type args struct {
 		ctx  context.Context
 		req  InfRequest
-		resp interface{}
+		resp *map[string]interface{}
 	}
 	tests := []struct {
 		name        string
-		fields      fields
 		args        args
 		want        interface{}
 		wantErr     bool
 		retryCount  int
 		short       bool
 		long        bool
-		optionRetry []OptionRetryFn
-		optionDo    []optionDoFn
+		optionRetry []optionRetryFn
 		extraCheck  func(r *http.Request) error
 	}{
 		{
 			name: "DoWithFunc",
-			fields: fields{
-				HttpClient: httpxClient.HTTPClient,
-				BaseURL:    httpxClient.BaseURL,
-			},
 			args: args{
 				ctx: context.Background(),
 				req: TestRequest{
 					ID: "123",
+
+					header: http.Header{
+						"X-Ctx": []string{"test"},
+					},
 				},
 				resp: new(map[string]interface{}),
-			},
-			optionDo: []optionDoFn{
-				OptionDo.WithHeader(http.Header{
-					"X-Ctx": []string{"test"},
-				}),
 			},
 			extraCheck: func(r *http.Request) error {
 				if v := r.Header.Get("X-Ctx"); v != "test" {
@@ -172,11 +158,7 @@ func TestClient_Do(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "DoWithFunc with retry",
-			fields: fields{
-				HttpClient: httpxClient.HTTPClient,
-				BaseURL:    httpxClient.BaseURL,
-			},
+			name: "DoWithFunc with retry disable",
 			args: args{
 				ctx: context.Background(),
 				req: TestRequest{
@@ -184,14 +166,30 @@ func TestClient_Do(t *testing.T) {
 				},
 				resp: new(map[string]interface{}),
 			},
-			optionRetry: []OptionRetryFn{
-				// CtxWithRetry(Retry{DisableRetry: true}),
+			optionRetry: []optionRetryFn{
+				OptionRetry.WithRetryDisable(),
+			},
+			wantErr:    true,
+			retryCount: 5,
+			// long:       true,
+		},
+		{
+			name: "DoWithFunc with retry",
+			args: args{
+				ctx: context.Background(),
+				req: TestRequest{
+					ID: "123",
+				},
+				resp: new(map[string]interface{}),
+			},
+			optionRetry: []optionRetryFn{
+				// OptionRetry.WithRetryDisable(),
 			},
 			want: map[string]interface{}{
 				"request_id": "123+",
 			},
-			wantErr:    true,
-			retryCount: 5,
+			wantErr:    false,
+			retryCount: 2,
 			long:       true,
 		},
 	}
@@ -201,35 +199,58 @@ func TestClient_Do(t *testing.T) {
 				t.Skip("skipping test in short mode.")
 			}
 
-			c := &Client{
-				HTTPClient: tt.fields.HttpClient,
-				BaseURL:    tt.fields.BaseURL,
-			}
-
 			retryCount = tt.retryCount
 			extraCheck = tt.extraCheck
 
-			ctx := RetryPolicyCtx(tt.args.ctx, tt.optionRetry...)
-			if err := c.DoWithFunc(ctx, tt.args.req, func(r *http.Response) error {
-				if err := json.NewDecoder(r.Body).Decode(tt.args.resp); err != nil {
+			httpxClient, err := NewClient(
+				OptionClient.WithBaseURL(httpServer.URL),
+				OptionClient.WithRetryMax(tt.retryCount),
+				OptionClient.WithRetryOptions(tt.optionRetry...),
+			)
+			if err != nil {
+				t.Errorf("NewClient() error = %v", err)
+				return
+			}
+
+			err = httpxClient.DoWithFunc(context.Background(), tt.args.req, func(r *http.Response) error {
+				if err := UnexpectedResponse(r); err != nil {
+					return err
+				}
+
+				body, err := io.ReadAll(r.Body)
+				if err != nil {
+					return err
+				}
+
+				log.Info().Msgf("response: %s", body)
+
+				if err := json.Unmarshal(body, &tt.args.resp); err != nil {
 					return err
 				}
 
 				return nil
-			}, tt.optionDo...); err != nil {
+			})
+			if err != nil {
 				if !tt.wantErr {
-					t.Errorf("Client.Do() error = %v, wantErr %v", err, tt.wantErr)
+					t.Fatalf("Client.DoWithFunc() error = %v, wantErr %v", err, tt.wantErr)
 				}
+
+				log.Error().Err(err).Msg("error")
+			}
+
+			if tt.wantErr && err == nil {
+				t.Fatalf("Client.DoWithFunc() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if tt.wantErr {
+				log.Info().Msgf("error: %v", err)
+
 				return
 			}
 
 			// tt.args.resp is a pointer
-			resp := reflect.ValueOf(tt.args.resp).Elem().Interface()
-			if diff := deep.Equal(resp, tt.want); diff != nil {
-				t.Errorf("Client.Do() resp diff = %v", diff)
+			if diff := deep.Equal(*tt.args.resp, tt.want); diff != nil {
+				t.Fatalf("Client.DoWithFunc() resp diff = %v", diff)
 			}
 		})
 	}

@@ -44,51 +44,17 @@ type InfBody interface {
 	Body() io.Reader
 }
 
-type optionDoValue struct {
-	baseURL *url.URL
-	header  http.Header
-}
-
-// OptionClient is a function that configures the client.
-type optionDoFn func(*optionDoValue)
-
-type optionDo struct{}
-
-var OptionDo = optionDo{}
-
-func (optionDo) WithBaseURL(baseURL *url.URL) optionDoFn {
-	return func(o *optionDoValue) {
-		o.baseURL = baseURL
-	}
-}
-
-func (optionDo) WithHeader(header http.Header) optionDoFn {
-	return func(o *optionDoValue) {
-		o.header = header
-	}
-}
-
 // DoWithFunc sends an HTTP request and calls the response function.
 //
 // Request additional implements InfRequestValidator, InfQueryStringGenerator, InfHeader, InfBody, InfBodyJSON.
-func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.Response) error, opts ...optionDoFn) error {
-	var option optionDoValue
-	for _, opt := range opts {
-		opt(&option)
-	}
-
-	baseURL := c.BaseURL
-	if option.baseURL != nil {
-		baseURL = option.baseURL
-	}
-
-	if baseURL == nil {
+func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.Response) error) error {
+	if c.BaseURL == nil {
 		return fmt.Errorf("base url is required")
 	}
 
 	if v, ok := req.(InfRequestValidator); ok {
 		if err := v.Validate(); err != nil {
-			return fmt.Errorf("%w: %v", ErrValidating, err)
+			return fmt.Errorf("%w: %w", ErrValidating, err)
 		}
 	}
 
@@ -121,7 +87,7 @@ func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.R
 
 		bodyData, err := json.Marshal(bodyGet)
 		if err != nil {
-			return fmt.Errorf("%w: %v", ErrMarshal, err)
+			return fmt.Errorf("%w: %w", ErrMarshal, err)
 		}
 
 		body = bytes.NewReader(bodyData)
@@ -129,27 +95,21 @@ func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.R
 		header.Set("Content-Type", "application/json")
 	}
 
-	// add context values
-	if option.header != nil {
-		for k := range option.header {
-			header.Set(k, option.header.Get(k))
-		}
+	uSend := c.BaseURL.ResolveReference(u)
+
+	httpReq, err := http.NewRequestWithContext(ctx, req.Method(), uSend.String(), body)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	uSend := baseURL.ResolveReference(u)
-
-	httpReq, _ := http.NewRequestWithContext(ctx, req.Method(), uSend.String(), body)
 	httpReq.Header = header
 
 	httpResp, err := c.HTTPClient.Do(httpReq)
 	if err != nil {
-		return fmt.Errorf("%w: %v", ErrRequest, err)
+		return fmt.Errorf("%w: %w", ErrRequest, err)
 	}
 
-	defer func() {
-		_, _ = io.Copy(io.Discard, httpResp.Body)
-		_ = httpResp.Body.Close()
-	}()
+	defer drainBody(httpResp.Body)
 
 	if fn == nil {
 		return ErrResponseFuncNil

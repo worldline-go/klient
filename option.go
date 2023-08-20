@@ -45,6 +45,10 @@ type optionClientValue struct {
 	RetryPolicy retryablehttp.CheckRetry
 	// Backoff is the backoff policy.
 	Backoff retryablehttp.Backoff
+	// RetryLog is the flag to enable retry log of the http body. Default is true.
+	RetryLog bool
+	// OptionRetryFns is the retry options for default retry policy.
+	OptionRetryFns []optionRetryFn
 }
 
 // optionClientFn is a function that configures the client.
@@ -89,14 +93,7 @@ func (optionClient) WithMaxConnections(maxConnections int) optionClientFn {
 }
 
 // WithLogger configures the client to use the provided logger.
-func (optionClient) WithLogger(logger interface{}) optionClientFn {
-	return func(o *optionClientValue) {
-		o.Logger = logger
-	}
-}
-
-// WithZerologLogger configures the client to use the provided logger.
-func (optionClient) WithZerologLogger(logger zerolog.Logger) optionClientFn {
+func (optionClient) WithLogger(logger zerolog.Logger) optionClientFn {
 	return func(o *optionClientValue) {
 		o.Logger = logz.AdapterKV{Log: logger}
 	}
@@ -151,6 +148,13 @@ func (optionClient) WithRetryMax(retryMax int) optionClientFn {
 	}
 }
 
+// WithBackoff configures the client to use the provided backoff.
+func (optionClient) WithBackoff(backoff retryablehttp.Backoff) optionClientFn {
+	return func(options *optionClientValue) {
+		options.Backoff = backoff
+	}
+}
+
 // WithRetryPolicy configures the client to use the provided retry policy.
 func (optionClient) WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) optionClientFn {
 	return func(options *optionClientValue) {
@@ -158,9 +162,17 @@ func (optionClient) WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) option
 	}
 }
 
-// WithBackoff configures the client to use the provided backoff.
-func (optionClient) WithBackoff(backoff retryablehttp.Backoff) optionClientFn {
+// WithRetryLog configures the client to use the provided retry log flag, default is true.
+//
+// This option is only used with default retry policy.
+func (optionClient) WithRetryLog(retryLog bool) optionClientFn {
 	return func(options *optionClientValue) {
-		options.Backoff = backoff
+		options.RetryLog = retryLog
+	}
+}
+
+func (optionClient) WithRetryOptions(opts ...optionRetryFn) optionClientFn {
+	return func(options *optionClientValue) {
+		options.OptionRetryFns = append(options.OptionRetryFns, opts...)
 	}
 }

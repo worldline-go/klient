@@ -1,16 +1,17 @@
 package klient
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/rs/zerolog/log"
+	"github.com/worldline-go/logz"
 )
 
 var (
@@ -22,27 +23,42 @@ var (
 )
 
 type Client struct {
-	HTTPClient *http.Client
-	BaseURL    *url.URL
+	HTTPClient      *http.Client
+	retryableClient *retryablehttp.Client
+	BaseURL         *url.URL
 }
 
 // NewClient creates a new http client with the provided options.
 //
 // Default BaseURL is required, it can be disabled by setting DisableBaseURLCheck to true.
 func NewClient(opts ...optionClientFn) (*Client, error) {
+	logAdapter := logz.AdapterKV{Log: log.Logger}
 	o := optionClientValue{
 		PooledClient:   true,
 		MaxConnections: defaultMaxConnections,
 		RetryWaitMin:   defaultRetryWaitMin,
 		RetryWaitMax:   defaultRetryWaitMax,
 		RetryMax:       defaultRetryMax,
-		RetryPolicy:    RetryPolicy,
 		Backoff:        retryablehttp.DefaultBackoff,
-		Logger:         log.New(os.Stderr, "", log.LstdFlags),
+		Logger:         logAdapter,
+		RetryLog:       true,
 	}
 
 	for _, opt := range opts {
 		opt(&o)
+	}
+
+	if o.RetryPolicy == nil {
+		if o.RetryLog {
+			options := []optionRetryFn{
+				OptionRetry.WithRetryLog(logAdapter),
+			}
+			options = append(options, o.OptionRetryFns...)
+
+			o.RetryPolicy = NewRetryPolicy(options...)
+		} else {
+			o.RetryPolicy = NewRetryPolicy(o.OptionRetryFns...)
+		}
 	}
 
 	var baseURL *url.URL
@@ -85,7 +101,12 @@ func NewClient(opts ...optionClientFn) (*Client, error) {
 	}
 
 	if o.TransportWrapper != nil {
-		transport, err := o.TransportWrapper(o.Ctx, client.Transport)
+		ctx := o.Ctx
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		transport, err := o.TransportWrapper(ctx, client.Transport)
 		if err != nil {
 			return nil, fmt.Errorf("failed to wrap transport: %w", err)
 		}
@@ -93,10 +114,11 @@ func NewClient(opts ...optionClientFn) (*Client, error) {
 		client.Transport = transport
 	}
 
+	var retryClient *retryablehttp.Client
 	// disable retry
 	if !o.DisableRetry {
 		// create retry client
-		retryClient := retryablehttp.Client{
+		retryClient = &retryablehttp.Client{
 			HTTPClient:   client,
 			Logger:       o.Logger,
 			RetryWaitMin: o.RetryWaitMin,
@@ -110,7 +132,8 @@ func NewClient(opts ...optionClientFn) (*Client, error) {
 	}
 
 	return &Client{
-		HTTPClient: client,
-		BaseURL:    baseURL,
+		HTTPClient:      client,
+		retryableClient: retryClient,
+		BaseURL:         baseURL,
 	}, nil
 }

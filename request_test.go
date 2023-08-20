@@ -58,7 +58,7 @@ func TestClient_Request(t *testing.T) {
 
 	defer httpServer.Close()
 
-	httpxClient, err := NewClient(
+	httpxClient, err := New(
 		OptionClient.WithBaseURL(httpServer.URL),
 	)
 	if err != nil {

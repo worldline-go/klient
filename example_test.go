@@ -117,7 +117,7 @@ func Example() {
 
 	defer httpServer.Close()
 
-	httpxClient, err := klient.NewClient(
+	httpxClient, err := klient.New(
 		klient.OptionClient.WithBaseURL(httpServer.URL),
 	)
 	if err != nil {

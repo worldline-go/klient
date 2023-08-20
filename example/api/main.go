@@ -91,7 +91,7 @@ func DirectCall(ctx context.Context, client *klient.Client) {
 }
 
 func main() {
-	client, err := klient.NewClient(
+	client, err := klient.New(
 		klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"),
 	)
 	if err != nil {

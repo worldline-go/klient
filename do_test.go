@@ -202,7 +202,7 @@ func TestClient_Do(t *testing.T) {
 			retryCount = tt.retryCount
 			extraCheck = tt.extraCheck
 
-			httpxClient, err := NewClient(
+			httpxClient, err := New(
 				OptionClient.WithBaseURL(httpServer.URL),
 				OptionClient.WithRetryMax(tt.retryCount),
 				OptionClient.WithRetryOptions(tt.optionRetry...),

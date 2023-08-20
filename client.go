@@ -16,7 +16,7 @@ import (
 
 var (
 	defaultMaxConnections = 100
-	// Default retry configuration
+
 	defaultRetryWaitMin = 1 * time.Second
 	defaultRetryWaitMax = 30 * time.Second
 	defaultRetryMax     = 4
@@ -28,10 +28,10 @@ type Client struct {
 	BaseURL         *url.URL
 }
 
-// NewClient creates a new http client with the provided options.
+// New creates a new http client with the provided options.
 //
 // Default BaseURL is required, it can be disabled by setting DisableBaseURLCheck to true.
-func NewClient(opts ...optionClientFn) (*Client, error) {
+func New(opts ...optionClientFn) (*Client, error) {
 	logAdapter := logz.AdapterKV{Log: log.Logger}
 	o := optionClientValue{
 		PooledClient:   true,

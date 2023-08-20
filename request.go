@@ -31,7 +31,7 @@ func (r request) Body() io.Reader {
 	return r.body
 }
 
-var globalClient, _ = NewClient(OptionClient.WithDisableBaseURLCheck(true))
+var globalClient, _ = New(OptionClient.WithDisableBaseURLCheck(true))
 
 // Request sends an HTTP request and calls the response function with the global client.
 func Request(ctx context.Context, baseURL, method, path string, body io.Reader, header http.Header, fn func(*http.Response) error) error {

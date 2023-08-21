@@ -129,7 +129,7 @@ func TestClient_Do(t *testing.T) {
 		retryCount  int
 		short       bool
 		long        bool
-		optionRetry []optionRetryFn
+		optionRetry []OptionRetryFn
 		extraCheck  func(r *http.Request) error
 	}{
 		{
@@ -166,7 +166,7 @@ func TestClient_Do(t *testing.T) {
 				},
 				resp: new(map[string]interface{}),
 			},
-			optionRetry: []optionRetryFn{
+			optionRetry: []OptionRetryFn{
 				OptionRetry.WithRetryDisable(),
 			},
 			wantErr:    true,
@@ -182,7 +182,7 @@ func TestClient_Do(t *testing.T) {
 				},
 				resp: new(map[string]interface{}),
 			},
-			optionRetry: []optionRetryFn{
+			optionRetry: []OptionRetryFn{
 				// OptionRetry.WithRetryDisable(),
 			},
 			want: map[string]interface{}{

@@ -48,115 +48,115 @@ type optionClientValue struct {
 	// RetryLog is the flag to enable retry log of the http body. Default is true.
 	RetryLog bool
 	// OptionRetryFns is the retry options for default retry policy.
-	OptionRetryFns []optionRetryFn
+	OptionRetryFns []OptionRetryFn
 }
 
-// optionClientFn is a function that configures the client.
-type optionClientFn func(*optionClientValue)
+// OptionClientFn is a function that configures the client.
+type OptionClientFn func(*optionClientValue)
 
 type OptionClientHolder struct{}
 
 var OptionClient = OptionClientHolder{}
 
 // WithHTTPClient configures the client to use the provided http client.
-func (OptionClientHolder) WithHTTPClient(httpClient *http.Client) optionClientFn {
+func (OptionClientHolder) WithHTTPClient(httpClient *http.Client) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.HTTPClient = httpClient
 	}
 }
 
-func (OptionClientHolder) WithPooledClient(pooledClient bool) optionClientFn {
+func (OptionClientHolder) WithPooledClient(pooledClient bool) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.PooledClient = pooledClient
 	}
 }
 
 // WithTransportWrapper configures the client to wrap the default transport.
-func (OptionClientHolder) WithTransportWrapper(f func(context.Context, http.RoundTripper) (http.RoundTripper, error)) optionClientFn {
+func (OptionClientHolder) WithTransportWrapper(f func(context.Context, http.RoundTripper) (http.RoundTripper, error)) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.TransportWrapper = f
 	}
 }
 
 // WithCtx for TransportWrapper call.
-func (OptionClientHolder) WithCtx(ctx context.Context) optionClientFn {
+func (OptionClientHolder) WithCtx(ctx context.Context) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.Ctx = ctx
 	}
 }
 
 // WithMaxConnections configures the client to use the provided maximum number of idle connections.
-func (OptionClientHolder) WithMaxConnections(maxConnections int) optionClientFn {
+func (OptionClientHolder) WithMaxConnections(maxConnections int) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.MaxConnections = maxConnections
 	}
 }
 
 // WithLogger configures the client to use the provided logger.
-func (OptionClientHolder) WithLogger(logger zerolog.Logger) optionClientFn {
+func (OptionClientHolder) WithLogger(logger zerolog.Logger) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.Logger = logz.AdapterKV{Log: logger}
 	}
 }
 
 // WithInsecureSkipVerify configures the client to skip TLS verification.
-func (OptionClientHolder) WithInsecureSkipVerify(insecureSkipVerify bool) optionClientFn {
+func (OptionClientHolder) WithInsecureSkipVerify(insecureSkipVerify bool) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.InsecureSkipVerify = insecureSkipVerify
 	}
 }
 
 // WithBaseURL configures the client to use the provided base URL.
-func (OptionClientHolder) WithBaseURL(baseURL string) optionClientFn {
+func (OptionClientHolder) WithBaseURL(baseURL string) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.BaseURL = baseURL
 	}
 }
 
 // WithDisableBaseURLCheck configures the client to disable base URL check.
-func (OptionClientHolder) WithDisableBaseURLCheck(baseURLCheck bool) optionClientFn {
+func (OptionClientHolder) WithDisableBaseURLCheck(baseURLCheck bool) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.DisableBaseURLCheck = baseURLCheck
 	}
 }
 
 // WithDisableRetry configures the client to disable retry.
-func (OptionClientHolder) WithDisableRetry(disableRetry bool) optionClientFn {
+func (OptionClientHolder) WithDisableRetry(disableRetry bool) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.DisableRetry = disableRetry
 	}
 }
 
 // WithRetryWaitMin configures the client to use the provided minimum wait time.
-func (OptionClientHolder) WithRetryWaitMin(retryWaitMin time.Duration) optionClientFn {
+func (OptionClientHolder) WithRetryWaitMin(retryWaitMin time.Duration) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryWaitMin = retryWaitMin
 	}
 }
 
 // WithRetryWaitMax configures the client to use the provided maximum wait time.
-func (OptionClientHolder) WithRetryWaitMax(retryWaitMax time.Duration) optionClientFn {
+func (OptionClientHolder) WithRetryWaitMax(retryWaitMax time.Duration) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryWaitMax = retryWaitMax
 	}
 }
 
 // WithRetryMax configures the client to use the provided maximum number of retry.
-func (OptionClientHolder) WithRetryMax(retryMax int) optionClientFn {
+func (OptionClientHolder) WithRetryMax(retryMax int) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryMax = retryMax
 	}
 }
 
 // WithBackoff configures the client to use the provided backoff.
-func (OptionClientHolder) WithBackoff(backoff retryablehttp.Backoff) optionClientFn {
+func (OptionClientHolder) WithBackoff(backoff retryablehttp.Backoff) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.Backoff = backoff
 	}
 }
 
 // WithRetryPolicy configures the client to use the provided retry policy.
-func (OptionClientHolder) WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) optionClientFn {
+func (OptionClientHolder) WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryPolicy = retryPolicy
 	}
@@ -165,13 +165,13 @@ func (OptionClientHolder) WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) 
 // WithRetryLog configures the client to use the provided retry log flag, default is true.
 //
 // This option is only used with default retry policy.
-func (OptionClientHolder) WithRetryLog(retryLog bool) optionClientFn {
+func (OptionClientHolder) WithRetryLog(retryLog bool) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryLog = retryLog
 	}
 }
 
-func (OptionClientHolder) WithRetryOptions(opts ...optionRetryFn) optionClientFn {
+func (OptionClientHolder) WithRetryOptions(opts ...OptionRetryFn) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.OptionRetryFns = append(options.OptionRetryFns, opts...)
 	}

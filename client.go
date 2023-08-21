@@ -31,7 +31,7 @@ type Client struct {
 // New creates a new http client with the provided options.
 //
 // Default BaseURL is required, it can be disabled by setting DisableBaseURLCheck to true.
-func New(opts ...optionClientFn) (*Client, error) {
+func New(opts ...OptionClientFn) (*Client, error) {
 	logAdapter := logz.AdapterKV{Log: log.Logger}
 	o := optionClientValue{
 		PooledClient:   true,
@@ -50,7 +50,7 @@ func New(opts ...optionClientFn) (*Client, error) {
 
 	if o.RetryPolicy == nil {
 		if o.RetryLog {
-			options := []optionRetryFn{
+			options := []OptionRetryFn{
 				OptionRetry.WithRetryLog(logAdapter),
 			}
 			options = append(options, o.OptionRetryFns...)

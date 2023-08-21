@@ -20,38 +20,38 @@ type OptionRetryValue = optionRetryValue
 
 type optionRetryFn func(*optionRetryValue)
 
-type optionRetry struct{}
+type OptionRetryHolder struct{}
 
-var OptionRetry = optionRetry{}
+var OptionRetry = OptionRetryHolder{}
 
 // WithOptionRetry configures the retry policy directly.
 //
 // This option overrides all other retry options when previously set.
-func (optionRetry) WithOptionRetry(oRetry *OptionRetryValue) optionRetryFn {
+func (OptionRetryHolder) WithOptionRetry(oRetry *OptionRetryValue) optionRetryFn {
 	return func(o *optionRetryValue) {
 		*o = *oRetry
 	}
 }
 
-func (optionRetry) WithRetryDisable() optionRetryFn {
+func (OptionRetryHolder) WithRetryDisable() optionRetryFn {
 	return func(o *optionRetryValue) {
 		o.DisableRetry = Null[bool]{Value: true, Valid: true}
 	}
 }
 
-func (optionRetry) WithRetryDisabledStatusCodes(codes ...int) optionRetryFn {
+func (OptionRetryHolder) WithRetryDisabledStatusCodes(codes ...int) optionRetryFn {
 	return func(o *optionRetryValue) {
 		o.DisabledStatusCodes = append(o.DisabledStatusCodes, codes...)
 	}
 }
 
-func (optionRetry) WithRetryEnabledStatusCodes(codes ...int) optionRetryFn {
+func (OptionRetryHolder) WithRetryEnabledStatusCodes(codes ...int) optionRetryFn {
 	return func(o *optionRetryValue) {
 		o.EnabledStatusCodes = append(o.EnabledStatusCodes, codes...)
 	}
 }
 
-func (optionRetry) WithRetryLog(log logz.Adapter) optionRetryFn {
+func (OptionRetryHolder) WithRetryLog(log logz.Adapter) optionRetryFn {
 	return func(o *optionRetryValue) {
 		o.Log = log
 	}

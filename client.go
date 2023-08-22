@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -23,9 +24,8 @@ var (
 )
 
 type Client struct {
-	HTTPClient      *http.Client
-	retryableClient *retryablehttp.Client
-	BaseURL         *url.URL
+	HTTPClient *http.Client
+	BaseURL    *url.URL
 }
 
 // New creates a new http client with the provided options.
@@ -63,6 +63,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 
 	var baseURL *url.URL
 	if !o.DisableBaseURLCheck {
+		if o.BaseURL == "" {
+			o.BaseURL = os.Getenv("KLIENT_BASE_URL")
+		}
+
 		if o.BaseURL == "" {
 			return nil, fmt.Errorf("base url is required")
 		}
@@ -114,11 +118,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport = transport
 	}
 
-	var retryClient *retryablehttp.Client
 	// disable retry
 	if !o.DisableRetry {
 		// create retry client
-		retryClient = &retryablehttp.Client{
+		retryClient := retryablehttp.Client{
 			HTTPClient:   client,
 			Logger:       o.Logger,
 			RetryWaitMin: o.RetryWaitMin,
@@ -132,8 +135,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	return &Client{
-		HTTPClient:      client,
-		retryableClient: retryClient,
-		BaseURL:         baseURL,
+		HTTPClient: client,
+		BaseURL:    baseURL,
 	}, nil
 }

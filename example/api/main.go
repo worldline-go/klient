@@ -8,6 +8,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/worldline-go/klient"
+	"github.com/worldline-go/logz"
 )
 
 type BeerAPI struct {
@@ -91,6 +92,8 @@ func DirectCall(ctx context.Context, client *klient.Client) {
 }
 
 func main() {
+	logz.InitializeLog()
+
 	client, err := klient.New(
 		klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"),
 	)

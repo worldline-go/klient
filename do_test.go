@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 	"github.com/rs/zerolog/log"
@@ -93,6 +94,12 @@ func TestClient_Do(t *testing.T) {
 			return
 		}
 
+		if m["id"] == "444" {
+			time.Sleep(500 * time.Millisecond)
+			_, _ = w.Write([]byte(`{"error": "time sleep"}`))
+			return
+		}
+
 		// check request body
 		if m["id"] != "123" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -122,15 +129,16 @@ func TestClient_Do(t *testing.T) {
 		resp *map[string]interface{}
 	}
 	tests := []struct {
-		name        string
-		args        args
-		want        interface{}
-		wantErr     bool
-		retryCount  int
-		short       bool
-		long        bool
-		optionRetry []OptionRetryFn
-		extraCheck  func(r *http.Request) error
+		name         string
+		args         args
+		want         interface{}
+		wantErr      bool
+		retryCount   int
+		short        bool
+		long         bool
+		optionRetry  []OptionRetryFn
+		optionClient []OptionClientFn
+		extraCheck   func(r *http.Request) error
 	}{
 		{
 			name: "DoWithFunc",
@@ -215,6 +223,25 @@ func TestClient_Do(t *testing.T) {
 			retryCount: 2,
 			long:       true,
 		},
+		{
+			name: "Timeout test",
+			args: args{
+				ctx: context.Background(),
+				req: TestRequest{
+					ID: "444",
+				},
+				resp: new(map[string]interface{}),
+			},
+			optionClient: []OptionClientFn{
+				OptionClient.WithDisableRetry(true),
+				OptionClient.WithTimeout(100 * time.Millisecond),
+			},
+			want: map[string]interface{}{
+				"request_id": "123+",
+			},
+			wantErr: true,
+			long:    true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -225,11 +252,14 @@ func TestClient_Do(t *testing.T) {
 			retryCount = tt.retryCount
 			extraCheck = tt.extraCheck
 
-			httpxClient, err := New(
+			tt.optionClient = append(
+				tt.optionClient,
 				OptionClient.WithBaseURL(httpServer.URL),
 				OptionClient.WithRetryMax(tt.retryCount),
 				OptionClient.WithRetryOptions(tt.optionRetry...),
 			)
+
+			httpxClient, err := New(tt.optionClient...)
 			if err != nil {
 				t.Errorf("NewClient() error = %v", err)
 				return

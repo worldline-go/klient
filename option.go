@@ -27,6 +27,9 @@ type optionClientValue struct {
 	// InsecureSkipVerify is the flag to skip TLS verification.
 	InsecureSkipVerify bool
 
+	// Timeout is the timeout for the request.
+	Timeout time.Duration
+
 	// BaseURL is the base URL of the service.
 	BaseURL string
 	// DisableBaseURLCheck is the flag to disable base URL check.
@@ -123,6 +126,15 @@ func (OptionClientHolder) WithBaseURL(baseURL string) OptionClientFn {
 func (OptionClientHolder) WithDisableBaseURLCheck(baseURLCheck bool) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.DisableBaseURLCheck = baseURLCheck
+	}
+}
+
+// WithTimeout configures the client to use the provided timeout.
+//
+// Default is no timeout.
+func (OptionClientHolder) WithTimeout(timeout time.Duration) OptionClientFn {
+	return func(o *optionClientValue) {
+		o.Timeout = timeout
 	}
 }
 

@@ -138,6 +138,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client = retryClient.StandardClient()
 	}
 
+	if o.Timeout > 0 {
+		client.Timeout = o.Timeout
+	}
+
 	return &Client{
 		HTTPClient: client,
 		BaseURL:    baseURL,

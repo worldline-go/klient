@@ -270,7 +270,7 @@ func TestClient_Do(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			err = httpxClient.DoWithFunc(ctx, tt.args.req, func(r *http.Response) error {
+			err = httpxClient.DoWithInf(ctx, tt.args.req, func(r *http.Response) error {
 				if err := UnexpectedResponse(r); err != nil {
 					return err
 				}

@@ -32,9 +32,9 @@ type RandomRequestResponse struct {
 func (c BeerAPI) GetRandomBeer(ctx context.Context) ([]RandomRequestResponse, error) {
 	var v []RandomRequestResponse
 
-	if err := c.klient.DoWithFunc(ctx, RandomRequest{}, func(r *http.Response) error {
+	if err := c.klient.DoWithInf(ctx, RandomRequest{}, func(r *http.Response) error {
 		if r.StatusCode != http.StatusOK {
-			return klient.UnexpectedResponseError(r)
+			return klient.ResponseError(r)
 		}
 
 		return json.NewDecoder(r.Body).Decode(&v)
@@ -64,7 +64,7 @@ type GetBeerRespond struct {
 func (c BeerAPI) GetBeer(ctx context.Context, req GetBeerRequest) (GetBeerRespond, error) {
 	var v []GetBeerRespond
 
-	if err := c.klient.Do(ctx, req, &v); err != nil {
+	if err := c.klient.DoWithInf(ctx, req, klient.ResponseFuncJSON(&v)); err != nil {
 		return GetBeerRespond{}, err
 	}
 
@@ -72,23 +72,28 @@ func (c BeerAPI) GetBeer(ctx context.Context, req GetBeerRequest) (GetBeerRespon
 }
 
 func DirectCall(ctx context.Context, client *klient.Client) {
-	if err := client.Request(ctx, http.MethodGet, "beers/random", nil, nil, func(r *http.Response) error {
-		if r.StatusCode != http.StatusOK {
-			return klient.UnexpectedResponseError(r)
-		}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "beers/random", nil)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create request")
+	}
 
-		var response interface{}
+	var response interface{}
+
+	if err := client.Do(req, func(r *http.Response) error {
+		if r.StatusCode != http.StatusOK {
+			return klient.ResponseError(r)
+		}
 
 		if err := json.NewDecoder(r.Body).Decode(&response); err != nil {
 			return fmt.Errorf("failed to decode response: %w, body: %v", err, klient.LimitedResponse(r))
 		}
 
-		log.Info().Interface("beers", response).Msg("got beers")
-
 		return nil
 	}); err != nil {
 		log.Fatal().Err(err).Msg("failed to request")
 	}
+
+	log.Info().Interface("beers", response).Msg("got beers")
 }
 
 func main() {

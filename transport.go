@@ -38,7 +38,7 @@ func (t *TransportCtx) SetHeader(req *http.Request) {
 // RoundTrip authorizes and authenticates the request with an
 // access token from Transport's Source.
 func (t *TransportCtx) RoundTrip(req *http.Request) (*http.Response, error) {
-	req2 := CloneRequest(req) // per RoundTripper contract
+	req2 := cloneRequest(req) // per RoundTripper contract
 	t.SetHeader(req2)
 
 	return t.base().RoundTrip(req2)
@@ -52,9 +52,9 @@ func (t *TransportCtx) base() http.RoundTripper {
 	return http.DefaultTransport
 }
 
-// CloneRequest returns a clone of the provided *http.Request.
+// cloneRequest returns a clone of the provided *http.Request.
 // The clone is a shallow copy of the struct and its Header map.
-func CloneRequest(r *http.Request) *http.Request {
+func cloneRequest(r *http.Request) *http.Request {
 	// shallow copy of the struct
 	r2 := new(http.Request)
 	*r2 = *r

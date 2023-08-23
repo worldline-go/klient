@@ -24,6 +24,38 @@ if err != nil {
 }
 ```
 
+Client has `Do` and `DoWithInf` methods to send request.  
+Methods will automatically drain and close the response body and it resolves reference of URL.
+
+### Request with http.Request
+
+```go
+req, err := http.NewRequestWithContext(ctx, http.MethodGet, "beers/random", nil)
+if err != nil {
+	// handle error
+}
+
+var response interface{}
+
+if err := client.Do(req, func(r *http.Response) error {
+	if r.StatusCode != http.StatusOK {
+		return klient.ResponseError(r)
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode response: %w, body: %v", err, klient.LimitedResponse(r))
+	}
+
+	return nil
+}); err != nil {
+	// handle error
+}
+
+log.Info().Interface("beers", response).Msg("got beers")
+```
+
+### Request with interface
+
 Set an API's struct with has client.
 
 ```go
@@ -48,7 +80,7 @@ type RandomRequestResponse struct {
 func (c BeerAPI) GetRandomBeer(ctx context.Context) ([]RandomRequestResponse, error) {
 	var v []RandomRequestResponse
 
-	if err := c.klient.DoWithFunc(ctx, RandomRequest{}, func(r *http.Response) error {
+	if err := c.klient.DoWithInf(ctx, RandomRequest{}, func(r *http.Response) error {
 		if r.StatusCode != http.StatusOK {
 			return klient.UnexpectedResponseError(r)
 		}

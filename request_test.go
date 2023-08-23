@@ -88,7 +88,7 @@ func TestClient_Request(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				HttpClient: httpxClient.HTTPClient,
+				HttpClient: httpxClient.HTTP,
 				BaseURL:    httpxClient.BaseURL,
 			},
 			args: args{
@@ -133,11 +133,18 @@ func TestClient_Request(t *testing.T) {
 			}
 
 			c := &Client{
-				HTTPClient: tt.fields.HttpClient,
-				BaseURL:    tt.fields.BaseURL,
+				HTTP:    tt.fields.HttpClient,
+				BaseURL: tt.fields.BaseURL,
 			}
 
-			if err := c.Request(tt.args.ctx, tt.args.method, tt.args.path, tt.args.body, tt.args.header, tt.args.fn); (err != nil) != tt.wantErr {
+			req, err := http.NewRequestWithContext(tt.args.ctx, tt.args.method, tt.args.path, tt.args.body)
+			if err != nil {
+				t.Fatalf("Client.Request() error = %v", err)
+			}
+
+			req.Header = tt.args.header
+
+			if err := c.Do(req, tt.args.fn); (err != nil) != tt.wantErr {
 				t.Errorf("Client.Request() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

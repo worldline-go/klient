@@ -16,9 +16,11 @@ type optionClientValue struct {
 	// PooledClient is generate pooled client if no http client provided.
 	// Default is true.
 	PooledClient bool
-	// TransportWrapper is a function that wraps the default transport.
-	TransportWrapper func(context.Context, http.RoundTripper) (http.RoundTripper, error)
-	// Ctx for TransportWrapper.
+	// RoundTripperList is functions that wraps the default transport.
+	//
+	// Last function will be called first.
+	RoundTripperList []func(context.Context, http.RoundTripper) (http.RoundTripper, error)
+	// Ctx for RoundTripper.
 	Ctx context.Context
 	// MaxConnections is the maximum number of idle (keep-alive) connections.
 	MaxConnections int
@@ -80,10 +82,10 @@ func (OptionClientHolder) WithPooledClient(pooledClient bool) OptionClientFn {
 	}
 }
 
-// WithTransportWrapper configures the client to wrap the default transport.
-func (OptionClientHolder) WithTransportWrapper(f func(context.Context, http.RoundTripper) (http.RoundTripper, error)) OptionClientFn {
+// WithRoundTripper configures the client to wrap the default transport.
+func (OptionClientHolder) WithRoundTripper(f func(context.Context, http.RoundTripper) (http.RoundTripper, error)) OptionClientFn {
 	return func(o *optionClientValue) {
-		o.TransportWrapper = f
+		o.RoundTripperList = append(o.RoundTripperList, f)
 	}
 }
 
@@ -129,9 +131,9 @@ func (OptionClientHolder) WithDisableBaseURLCheck(baseURLCheck bool) OptionClien
 	}
 }
 
-// WithTimeout configures the client to use the provided timeout.
+// WithTimeout configures the client to use the provided timeout. Default is no timeout.
 //
-// Default is no timeout.
+// Warning: This timeout is for the whole request, including retries.
 func (OptionClientHolder) WithTimeout(timeout time.Duration) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.Timeout = timeout

@@ -16,9 +16,9 @@ type Client struct {
 
 func (c *Client) CreateX(ctx context.Context, r CreateXRequest) (*CreateXResponse, error) {
 	var v CreateXResponse
-	if err := c.klient.DoWithFunc(ctx, r, func(r *http.Response) error {
+	if err := c.klient.DoWithInf(ctx, r, func(r *http.Response) error {
 		if r.StatusCode != http.StatusOK {
-			return klient.UnexpectedResponseError(r)
+			return klient.ResponseError(r)
 		}
 
 		if err := json.NewDecoder(r.Body).Decode(&v); err != nil {

@@ -44,10 +44,12 @@ type InfBody interface {
 	Body() io.Reader
 }
 
-// DoWithFunc sends an HTTP request and calls the response function.
+// DoWithInf sends an HTTP request and calls the response function with resolving reference URL.
+//
+// It is automatically drain and close the response body.
 //
 // Request additional implements InfRequestValidator, InfQueryStringGenerator, InfHeader, InfBody, InfBodyJSON.
-func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.Response) error) error {
+func (c *Client) DoWithInf(ctx context.Context, req InfRequest, fn func(*http.Response) error) error {
 	if c.BaseURL == nil {
 		return fmt.Errorf("base url is required")
 	}
@@ -104,7 +106,7 @@ func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.R
 
 	httpReq.Header = header
 
-	httpResp, err := c.HTTPClient.Do(httpReq)
+	httpResp, err := c.HTTP.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrRequest, err)
 	}
@@ -116,34 +118,4 @@ func (c *Client) DoWithFunc(ctx context.Context, req InfRequest, fn func(*http.R
 	}
 
 	return fn(httpResp)
-}
-
-// Do sends an HTTP request and json unmarshals the response body to data.
-//
-// Do work same as DoWithFunc with defaultResponseFunc.
-func (c *Client) Do(ctx context.Context, req InfRequest, resp interface{}) error {
-	fn := func(r *http.Response) error { return defaultResponseFunc(r, resp) }
-
-	return c.DoWithFunc(ctx, req, fn)
-}
-
-func defaultResponseFunc(resp *http.Response, data interface{}) error {
-	if err := UnexpectedResponse(resp); err != nil {
-		return err
-	}
-
-	// 204s, for example
-	if resp.ContentLength == 0 {
-		return nil
-	}
-
-	if data == nil {
-		return nil
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(data); err != nil {
-		return fmt.Errorf("decode response body: %w", err)
-	}
-
-	return nil
 }

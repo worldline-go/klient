@@ -24,8 +24,8 @@ var (
 )
 
 type Client struct {
-	HTTPClient *http.Client
-	BaseURL    *url.URL
+	HTTP    *http.Client
+	BaseURL *url.URL
 }
 
 // New creates a new http client with the provided options.
@@ -62,15 +62,17 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	var baseURL *url.URL
-	if !o.DisableBaseURLCheck {
-		if o.BaseURL == "" {
-			o.BaseURL = os.Getenv("KLIENT_BASE_URL")
-		}
+	if o.BaseURL == "" {
+		o.BaseURL = os.Getenv("KLIENT_BASE_URL")
+	}
 
+	if !o.DisableBaseURLCheck {
 		if o.BaseURL == "" {
 			return nil, fmt.Errorf("base url is required")
 		}
+	}
 
+	if o.BaseURL != "" {
 		var err error
 		baseURL, err = url.Parse(o.BaseURL)
 		if err != nil {
@@ -108,18 +110,20 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport = &TransportCtx{Base: client.Transport}
 	}
 
-	if o.TransportWrapper != nil {
+	if len(o.RoundTripperList) > 0 {
 		ctx := o.Ctx
 		if ctx == nil {
 			ctx = context.Background()
 		}
 
-		transport, err := o.TransportWrapper(ctx, client.Transport)
-		if err != nil {
-			return nil, fmt.Errorf("failed to wrap transport: %w", err)
-		}
+		for _, roundTripper := range o.RoundTripperList {
+			transport, err := roundTripper(ctx, client.Transport)
+			if err != nil {
+				return nil, fmt.Errorf("failed to wrap transport: %w", err)
+			}
 
-		client.Transport = transport
+			client.Transport = transport
+		}
 	}
 
 	// disable retry
@@ -143,7 +147,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	return &Client{
-		HTTPClient: client,
-		BaseURL:    baseURL,
+		HTTP:    client,
+		BaseURL: baseURL,
 	}, nil
 }

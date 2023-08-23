@@ -158,6 +158,29 @@ func TestClient_Do(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "DoWithFunc ctx header",
+			args: args{
+				ctx: context.WithValue(context.Background(), TransportCtxKey, http.Header{
+					"X-Ctx": []string{"test"},
+				}),
+				req: TestRequest{
+					ID: "123",
+				},
+				resp: new(map[string]interface{}),
+			},
+			extraCheck: func(r *http.Request) error {
+				if v := r.Header.Get("X-Ctx"); v != "test" {
+					return fmt.Errorf("invalid request header %s", v)
+				}
+
+				return nil
+			},
+			want: map[string]interface{}{
+				"request_id": "123+",
+			},
+			wantErr: false,
+		},
+		{
 			name: "DoWithFunc with retry disable",
 			args: args{
 				ctx: context.Background(),
@@ -212,7 +235,12 @@ func TestClient_Do(t *testing.T) {
 				return
 			}
 
-			err = httpxClient.DoWithFunc(context.Background(), tt.args.req, func(r *http.Response) error {
+			ctx := tt.args.ctx
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			err = httpxClient.DoWithFunc(ctx, tt.args.req, func(r *http.Response) error {
 				if err := UnexpectedResponse(r); err != nil {
 					return err
 				}

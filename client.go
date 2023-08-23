@@ -104,6 +104,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
 	}
 
+	if !o.DisableTransportCtx {
+		client.Transport = &TransportCtx{Base: client.Transport}
+	}
+
 	if o.TransportWrapper != nil {
 		ctx := o.Ctx
 		if ctx == nil {

@@ -32,14 +32,20 @@ type optionClientValue struct {
 	// DisableBaseURLCheck is the flag to disable base URL check.
 	DisableBaseURLCheck bool
 
+	// DisableTransportCtx to disable TransportCtx
+	// Default is false
+	DisableTransportCtx bool
+
 	// DisableRetry is the flag to disable retry.
 	DisableRetry bool
 	// RetryWaitMin is the minimum wait time.
-	// Default is 100ms.
+	// Default is 1 * time.Second.
 	RetryWaitMin time.Duration
 	// RetryWaitMax is the maximum wait time.
+	// Default is 30 * time.Second.
 	RetryWaitMax time.Duration
 	// RetryMax is the maximum number of retry.
+	// Default is 4.
 	RetryMax int
 	// RetryPolicy is the retry policy.
 	RetryPolicy retryablehttp.CheckRetry

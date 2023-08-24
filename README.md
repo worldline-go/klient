@@ -56,6 +56,14 @@ log.Info().Interface("beers", response).Msg("got beers")
 
 ### Request with interface
 
+Our interface just one function to create a request.
+
+```go
+type Requester interface {
+	Request(context.Context) (*http.Request, error)
+}
+```
+
 Set an API's struct with has client.
 
 ```go
@@ -71,6 +79,15 @@ func (RandomRequest) Method() string {
 
 func (RandomRequest) Path() string {
 	return "beers/random"
+}
+
+func (r RandomRequest) Request(ctx context.Context) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 type RandomRequestResponse struct {

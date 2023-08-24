@@ -1,6 +1,7 @@
 package klient_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -47,10 +48,6 @@ func (CreateXRequest) Path() string {
 	return "/api/v1/x"
 }
 
-func (r CreateXRequest) BodyJSON() interface{} {
-	return r
-}
-
 func (r CreateXRequest) Validate() error {
 	if r.ID == "" {
 		return fmt.Errorf("id is required")
@@ -64,6 +61,28 @@ func (r CreateXRequest) Header() http.Header {
 	v.Set("X-Info", "example")
 
 	return v
+}
+
+func (r CreateXRequest) Request(ctx context.Context) (*http.Request, error) {
+	if err := r.Validate(); err != nil {
+		return nil, err
+	}
+
+	bodyData, err := json.Marshal(r)
+	if err != nil {
+		return nil, fmt.Errorf("unable to marshal request body: %w", err)
+	}
+
+	body := bytes.NewReader(bodyData)
+
+	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = r.Header()
+
+	return req, nil
 }
 
 type CreateXResponse struct {

@@ -25,6 +25,15 @@ func (RandomRequest) Path() string {
 	return "beers/random"
 }
 
+func (r RandomRequest) Request(ctx context.Context) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 type RandomRequestResponse struct {
 	Name string `json:"name"`
 }
@@ -55,6 +64,15 @@ func (GetBeerRequest) Method() string {
 
 func (r GetBeerRequest) Path() string {
 	return fmt.Sprintf("beers/%s", r.ID)
+}
+
+func (r GetBeerRequest) Request(ctx context.Context) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 type GetBeerRespond struct {
@@ -111,8 +129,8 @@ func main() {
 	// DirectCall(ctx, client)
 	// or
 	beerAPI := BeerAPI{client}
-	// beer, err := beerAPI.GetRandomBeer(ctx)
-	beer, err := beerAPI.GetBeer(ctx, GetBeerRequest{ID: "1"})
+	beer, err := beerAPI.GetRandomBeer(ctx)
+	// beer, err := beerAPI.GetBeer(ctx, GetBeerRequest{ID: "1"})
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to get random beer")
 	}

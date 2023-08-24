@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	ErrValidating      = fmt.Errorf("failed to validate request")
-	ErrMarshal         = fmt.Errorf("failed to marshal request body")
+	ErrCreateRequest   = fmt.Errorf("failed to create request")
 	ErrRequest         = fmt.Errorf("failed to do request")
 	ErrResponseFuncNil = fmt.Errorf("response function is nil")
 )

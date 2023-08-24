@@ -6,29 +6,39 @@ import (
 
 // Transport is an http.RoundTripper that
 // wrapping a base RoundTripper and adding headers from context.
-type TransportCtx struct {
+type TransportHeader struct {
 	// Base is the base RoundTripper used to make HTTP requests.
 	// If nil, http.DefaultTransport is used.
 	Base http.RoundTripper
+	// Header for default header to set if not exist.
+	Header http.Header
 }
 
-var _ http.RoundTripper = (*TransportCtx)(nil)
+var _ http.RoundTripper = (*TransportHeader)(nil)
 
 type ctxKlient string
 
-// TransportCtxKey is the context key to use with context.WithValue to
+// TransportHeaderKey is the context key to use with context.WithValue to
 // specify http.Header for a request.
-var TransportCtxKey ctxKlient = "HTTP_HEADER"
+var TransportHeaderKey ctxKlient = "HTTP_HEADER"
 
 // RoundTrip authorizes and authenticates the request with an
 // access token from Transport's Source.
-func (t *TransportCtx) SetHeader(req *http.Request) {
+func (t *TransportHeader) SetHeader(req *http.Request) {
+	defer func() {
+		for k, v := range t.Header {
+			if _, ok := req.Header[k]; !ok {
+				req.Header[k] = v
+			}
+		}
+	}()
+
 	ctx := req.Context()
 	if ctx == nil {
 		return
 	}
 
-	if header, ok := ctx.Value(TransportCtxKey).(http.Header); ok {
+	if header, ok := ctx.Value(TransportHeaderKey).(http.Header); ok {
 		for k, v := range header {
 			req.Header[k] = v
 		}
@@ -37,14 +47,14 @@ func (t *TransportCtx) SetHeader(req *http.Request) {
 
 // RoundTrip authorizes and authenticates the request with an
 // access token from Transport's Source.
-func (t *TransportCtx) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *TransportHeader) RoundTrip(req *http.Request) (*http.Response, error) {
 	req2 := cloneRequest(req) // per RoundTripper contract
 	t.SetHeader(req2)
 
 	return t.base().RoundTrip(req2)
 }
 
-func (t *TransportCtx) base() http.RoundTripper {
+func (t *TransportHeader) base() http.RoundTripper {
 	if t.Base != nil {
 		return t.Base
 	}

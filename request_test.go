@@ -308,7 +308,7 @@ func TestClient_Do(t *testing.T) {
 		{
 			name: "DoWithFunc ctx header",
 			args: args{
-				ctx: context.WithValue(context.Background(), TransportCtxKey, http.Header{
+				ctx: context.WithValue(context.Background(), TransportHeaderKey, http.Header{
 					"X-Ctx": []string{"test"},
 				}),
 				req: TestRequest{

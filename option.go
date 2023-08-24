@@ -10,6 +10,8 @@ import (
 	"github.com/worldline-go/logz"
 )
 
+type RoundTripperFunc = func(context.Context, http.RoundTripper) (http.RoundTripper, error)
+
 type optionClientValue struct {
 	// HTTPClient is the http client.
 	HTTPClient *http.Client
@@ -19,7 +21,7 @@ type optionClientValue struct {
 	// RoundTripperList is functions that wraps the default transport.
 	//
 	// Last function will be called first.
-	RoundTripperList []func(context.Context, http.RoundTripper) (http.RoundTripper, error)
+	RoundTripperList []RoundTripperFunc
 	// Ctx for RoundTripper.
 	Ctx context.Context
 	// MaxConnections is the maximum number of idle (keep-alive) connections.
@@ -37,9 +39,13 @@ type optionClientValue struct {
 	// DisableBaseURLCheck is the flag to disable base URL check.
 	DisableBaseURLCheck bool
 
-	// DisableTransportCtx to disable TransportCtx
+	// DisableTransportHeader to disable TransportHeader
 	// Default is false
-	DisableTransportCtx bool
+	DisableTransportHeader bool
+	// Header for default header to set if not exist.
+	//
+	// If DisableTransportHeader is true, this header will be ignored.
+	Header http.Header
 
 	// DisableRetry is the flag to disable retry.
 	DisableRetry bool
@@ -83,9 +89,9 @@ func (OptionClientHolder) WithPooledClient(pooledClient bool) OptionClientFn {
 }
 
 // WithRoundTripper configures the client to wrap the default transport.
-func (OptionClientHolder) WithRoundTripper(f func(context.Context, http.RoundTripper) (http.RoundTripper, error)) OptionClientFn {
+func (OptionClientHolder) WithRoundTripper(f ...func(context.Context, http.RoundTripper) (http.RoundTripper, error)) OptionClientFn {
 	return func(o *optionClientValue) {
-		o.RoundTripperList = append(o.RoundTripperList, f)
+		o.RoundTripperList = append(o.RoundTripperList, f...)
 	}
 }
 
@@ -93,6 +99,20 @@ func (OptionClientHolder) WithRoundTripper(f func(context.Context, http.RoundTri
 func (OptionClientHolder) WithCtx(ctx context.Context) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.Ctx = ctx
+	}
+}
+
+// WithDisableTransportHeader to disable TransportHeader in default.
+func (OptionClientHolder) WithDisableTransportHeader() OptionClientFn {
+	return func(o *optionClientValue) {
+		o.DisableTransportHeader = true
+	}
+}
+
+// WithHeader configures the client to use this default header if not exist.
+func (OptionClientHolder) WithHeader(header http.Header) OptionClientFn {
+	return func(o *optionClientValue) {
+		o.Header = header
 	}
 }
 

@@ -120,6 +120,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 
 		for _, roundTripper := range o.RoundTripperList {
+			if roundTripper == nil {
+				continue
+			}
+
 			transport, err := roundTripper(ctx, client.Transport)
 			if err != nil {
 				return nil, fmt.Errorf("failed to wrap transport: %w", err)

@@ -38,6 +38,10 @@ func ResponseFuncJSON(data interface{}) func(*http.Response) error {
 
 // LimitedResponse not close body, retry library draining it.
 func LimitedResponse(resp *http.Response) []byte {
+	if resp == nil {
+		return nil
+	}
+
 	v, _ := io.ReadAll(io.LimitReader(resp.Body, ResponseErrLimit))
 
 	return v

@@ -119,6 +119,9 @@ func main() {
 
 	client, err := klient.New(
 		klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"),
+		// klient.OptionClient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		// 	Level: slog.LevelDebug,
+		// }))),
 	)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create client")

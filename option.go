@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"github.com/rs/zerolog"
 	"github.com/worldline-go/logz"
 )
 
@@ -124,9 +123,11 @@ func (OptionClientHolder) WithMaxConnections(maxConnections int) OptionClientFn 
 }
 
 // WithLogger configures the client to use the provided logger.
-func (OptionClientHolder) WithLogger(logger zerolog.Logger) OptionClientFn {
+//
+// For zerolog logz.AdapterKV{Log: logger} can usable.
+func (OptionClientHolder) WithLogger(logger logz.Adapter) OptionClientFn {
 	return func(o *optionClientValue) {
-		o.Logger = logz.AdapterKV{Log: logger}
+		o.Logger = logger
 	}
 }
 

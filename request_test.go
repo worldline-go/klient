@@ -62,7 +62,7 @@ func TestClient_Request(t *testing.T) {
 
 	defer httpServer.Close()
 
-	httpxClient, err := New(
+	client, err := New(
 		OptionClient.WithBaseURL(httpServer.URL),
 	)
 	if err != nil {
@@ -92,8 +92,7 @@ func TestClient_Request(t *testing.T) {
 		{
 			name: "test",
 			fields: fields{
-				HttpClient: httpxClient.HTTP,
-				BaseURL:    httpxClient.BaseURL,
+				HttpClient: client.HTTP,
 			},
 			args: args{
 				ctx:    context.Background(),
@@ -137,8 +136,7 @@ func TestClient_Request(t *testing.T) {
 			}
 
 			c := &Client{
-				HTTP:    tt.fields.HttpClient,
-				BaseURL: tt.fields.BaseURL,
+				HTTP: tt.fields.HttpClient,
 			}
 
 			req, err := http.NewRequestWithContext(tt.args.ctx, tt.args.method, tt.args.path, tt.args.body)

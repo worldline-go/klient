@@ -2,19 +2,22 @@ package klient
 
 import (
 	"net/http"
+	"net/url"
 )
 
-// Transport is an http.RoundTripper that
+// TransportKlient is an http.RoundTripper that
 // wrapping a base RoundTripper and adding headers from context.
-type TransportHeader struct {
+type TransportKlient struct {
 	// Base is the base RoundTripper used to make HTTP requests.
 	// If nil, http.DefaultTransport is used.
 	Base http.RoundTripper
 	// Header for default header to set if not exist.
 	Header http.Header
+	// BaseURL is the base URL for relative requests.
+	BaseURL *url.URL
 }
 
-var _ http.RoundTripper = (*TransportHeader)(nil)
+var _ http.RoundTripper = (*TransportKlient)(nil)
 
 type ctxKlient string
 
@@ -24,7 +27,12 @@ var TransportHeaderKey ctxKlient = "HTTP_HEADER"
 
 // RoundTrip authorizes and authenticates the request with an
 // access token from Transport's Source.
-func (t *TransportHeader) SetHeader(req *http.Request) {
+func (t *TransportKlient) SetHeader(req *http.Request) {
+	// add base url
+	if t.BaseURL != nil {
+		req.URL = t.BaseURL.ResolveReference(req.URL)
+	}
+
 	defer func() {
 		for k, v := range t.Header {
 			if _, ok := req.Header[k]; !ok {
@@ -47,14 +55,14 @@ func (t *TransportHeader) SetHeader(req *http.Request) {
 
 // RoundTrip authorizes and authenticates the request with an
 // access token from Transport's Source.
-func (t *TransportHeader) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *TransportKlient) RoundTrip(req *http.Request) (*http.Response, error) {
 	req2 := cloneRequest(req) // per RoundTripper contract
 	t.SetHeader(req2)
 
 	return t.base().RoundTrip(req2)
 }
 
-func (t *TransportHeader) base() http.RoundTripper {
+func (t *TransportKlient) base() http.RoundTripper {
 	if t.Base != nil {
 		return t.Base
 	}

@@ -28,16 +28,12 @@ func (c *Client) DoWithInf(ctx context.Context, request Requester, fn func(*http
 //
 // It is automatically drain and close the response body.
 func (c *Client) Do(req *http.Request, fn func(*http.Response) error) error {
-	if c.BaseURL != nil {
-		req.URL = c.BaseURL.ResolveReference(req.URL)
-	}
-
 	httpResp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrRequest, err)
 	}
 
-	defer drainBody(httpResp.Body)
+	defer DrainBody(httpResp.Body)
 
 	if fn == nil {
 		return ErrResponseFuncNil

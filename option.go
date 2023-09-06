@@ -38,12 +38,7 @@ type optionClientValue struct {
 	// DisableBaseURLCheck is the flag to disable base URL check.
 	DisableBaseURLCheck bool
 
-	// DisableTransportHeader to disable TransportHeader
-	// Default is false
-	DisableTransportHeader bool
 	// Header for default header to set if not exist.
-	//
-	// If DisableTransportHeader is true, this header will be ignored.
 	Header http.Header
 
 	// DisableRetry is the flag to disable retry.
@@ -98,13 +93,6 @@ func (OptionClientHolder) WithRoundTripper(f ...func(context.Context, http.Round
 func (OptionClientHolder) WithCtx(ctx context.Context) OptionClientFn {
 	return func(o *optionClientValue) {
 		o.Ctx = ctx
-	}
-}
-
-// WithDisableTransportHeader to disable TransportHeader in default.
-func (OptionClientHolder) WithDisableTransportHeader() OptionClientFn {
-	return func(o *optionClientValue) {
-		o.DisableTransportHeader = true
 	}
 }
 

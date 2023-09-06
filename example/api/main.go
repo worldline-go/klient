@@ -17,16 +17,8 @@ type BeerAPI struct {
 
 type RandomRequest struct{}
 
-func (RandomRequest) Method() string {
-	return http.MethodGet
-}
-
-func (RandomRequest) Path() string {
-	return "beers/random"
-}
-
 func (r RandomRequest) Request(ctx context.Context) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "beers/random", nil)
 	if err != nil {
 		return nil, err
 	}

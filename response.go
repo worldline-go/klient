@@ -47,8 +47,8 @@ func LimitedResponse(resp *http.Response) []byte {
 	return v
 }
 
-// drainBody reads the entire content of r and then closes the underlying io.ReadCloser.
-func drainBody(body io.ReadCloser) {
+// DrainBody reads the entire content of r and then closes the underlying io.ReadCloser.
+func DrainBody(body io.ReadCloser) {
 	defer body.Close()
 	_, _ = io.Copy(io.Discard, io.LimitReader(body, ResponseErrLimit))
 }

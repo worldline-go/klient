@@ -24,8 +24,7 @@ var (
 )
 
 type Client struct {
-	HTTP    *http.Client
-	BaseURL *url.URL
+	HTTP *http.Client
 }
 
 // New creates a new http client with the provided options.
@@ -106,11 +105,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
 	}
 
-	if !o.DisableTransportHeader {
-		client.Transport = &TransportHeader{
-			Base:   client.Transport,
-			Header: o.Header,
-		}
+	client.Transport = &TransportKlient{
+		Base:    client.Transport,
+		Header:  o.Header,
+		BaseURL: baseURL,
 	}
 
 	if len(o.RoundTripperList) > 0 {
@@ -154,7 +152,6 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	return &Client{
-		HTTP:    client,
-		BaseURL: baseURL,
+		HTTP: client,
 	}, nil
 }

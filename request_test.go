@@ -159,18 +159,6 @@ type TestRequest struct {
 	header http.Header `json:"-"`
 }
 
-func (r TestRequest) Header() http.Header {
-	header := http.Header{}
-	header.Set("X-Info", "test")
-	header.Set("Content-Type", "application/json")
-
-	for k, v := range r.header {
-		header[k] = v
-	}
-
-	return header
-}
-
 func (r TestRequest) Request(ctx context.Context) (*http.Request, error) {
 	bodyData, err := json.Marshal(r)
 	if err != nil {
@@ -184,9 +172,28 @@ func (r TestRequest) Request(ctx context.Context) (*http.Request, error) {
 		return nil, err
 	}
 
-	req.Header = r.Header()
+	req.Header.Set("X-Info", "test")
+	req.Header.Set("Content-Type", "application/json")
+
+	for k, v := range r.header {
+		req.Header[k] = v
+	}
 
 	return req, nil
+}
+
+func (TestRequest) Response(r *http.Response) (map[string]interface{}, error) {
+	if err := UnexpectedResponse(r); err != nil {
+		return nil, err
+	}
+
+	var m map[string]interface{}
+
+	if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 func TestClient_Do(t *testing.T) {
@@ -263,7 +270,7 @@ func TestClient_Do(t *testing.T) {
 
 	type args struct {
 		ctx  context.Context
-		req  Requester
+		req  Requester[map[string]interface{}]
 		resp *map[string]interface{}
 	}
 	tests := []struct {
@@ -397,7 +404,7 @@ func TestClient_Do(t *testing.T) {
 				OptionClient.WithRetryOptions(tt.optionRetry...),
 			)
 
-			httpxClient, err := New(tt.optionClient...)
+			client, err := New(tt.optionClient...)
 			if err != nil {
 				t.Errorf("NewClient() error = %v", err)
 				return
@@ -408,24 +415,7 @@ func TestClient_Do(t *testing.T) {
 				ctx = context.Background()
 			}
 
-			err = httpxClient.DoWithInf(ctx, tt.args.req, func(r *http.Response) error {
-				if err := UnexpectedResponse(r); err != nil {
-					return err
-				}
-
-				body, err := io.ReadAll(r.Body)
-				if err != nil {
-					return err
-				}
-
-				log.Info().Msgf("response: %s", body)
-
-				if err := json.Unmarshal(body, &tt.args.resp); err != nil {
-					return err
-				}
-
-				return nil
-			})
+			*tt.args.resp, err = DoWithInf(ctx, client.HTTP, tt.args.req)
 			if err != nil {
 				if !tt.wantErr {
 					t.Fatalf("Client.DoWithFunc() error = %v, wantErr %v", err, tt.wantErr)

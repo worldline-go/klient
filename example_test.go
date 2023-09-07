@@ -11,61 +11,13 @@ import (
 	"github.com/worldline-go/klient"
 )
 
-type Client struct {
-	klient *klient.Client
-}
-
-func (c *Client) CreateX(ctx context.Context, r CreateXRequest) (*CreateXResponse, error) {
-	var v CreateXResponse
-	if err := c.klient.DoWithInf(ctx, r, func(r *http.Response) error {
-		if r.StatusCode != http.StatusOK {
-			return klient.ResponseError(r)
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	return &v, nil
-}
-
-// ----
-
 type CreateXRequest struct {
 	ID string `json:"id"`
 }
 
-func (CreateXRequest) Method() string {
-	return http.MethodPost
-}
-
-func (CreateXRequest) Path() string {
-	return "/api/v1/x"
-}
-
-func (r CreateXRequest) Validate() error {
-	if r.ID == "" {
-		return fmt.Errorf("id is required")
-	}
-
-	return nil
-}
-
-func (r CreateXRequest) Header() http.Header {
-	v := http.Header{}
-	v.Set("X-Info", "example")
-
-	return v
-}
-
 func (r CreateXRequest) Request(ctx context.Context) (*http.Request, error) {
-	if err := r.Validate(); err != nil {
-		return nil, err
+	if r.ID == "" {
+		return nil, fmt.Errorf("id is required")
 	}
 
 	bodyData, err := json.Marshal(r)
@@ -75,14 +27,28 @@ func (r CreateXRequest) Request(ctx context.Context) (*http.Request, error) {
 
 	body := bytes.NewReader(bodyData)
 
-	req, err := http.NewRequestWithContext(ctx, r.Method(), r.Path(), body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "/api/v1/x", body)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header = r.Header()
+	req.Header.Add("X-Info", "example")
 
 	return req, nil
+}
+
+func (CreateXRequest) Response(resp *http.Response) (CreateXResponse, error) {
+	var v CreateXResponse
+
+	if err := klient.UnexpectedResponse(resp); err != nil {
+		return v, err
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&v); err != nil {
+		return v, err
+	}
+
+	return v, nil
 }
 
 type CreateXResponse struct {
@@ -136,7 +102,7 @@ func Example() {
 
 	defer httpServer.Close()
 
-	httpxClient, err := klient.New(
+	client, err := klient.New(
 		klient.OptionClient.WithBaseURL(httpServer.URL),
 	)
 	if err != nil {
@@ -144,11 +110,7 @@ func Example() {
 		return
 	}
 
-	c := &Client{
-		klient: httpxClient,
-	}
-
-	v, err := c.CreateX(context.Background(), CreateXRequest{
+	v, err := klient.DoWithInf(context.Background(), client.HTTP, CreateXRequest{
 		ID: "123",
 	})
 	if err != nil {

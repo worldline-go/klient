@@ -21,6 +21,9 @@ var (
 	defaultRetryWaitMin = 1 * time.Second
 	defaultRetryWaitMax = 30 * time.Second
 	defaultRetryMax     = 4
+
+	// DefaultBaseURL when empty os.Getenv("API_GATEWAY_ADDRESS") will use.
+	DefaultBaseURL = ""
 )
 
 type Client struct {
@@ -62,7 +65,12 @@ func New(opts ...OptionClientFn) (*Client, error) {
 
 	var baseURL *url.URL
 	if o.BaseURL == "" {
-		o.BaseURL = os.Getenv("KLIENT_BASE_URL")
+		baseURL := DefaultBaseURL
+		if baseURL == "" {
+			baseURL = os.Getenv("API_GATEWAY_ADDRESS")
+		}
+
+		o.BaseURL = baseURL
 	}
 
 	if !o.DisableBaseURLCheck {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	"github.com/worldline-go/klient"
 )
@@ -102,9 +103,10 @@ func Example() {
 
 	defer httpServer.Close()
 
-	client, err := klient.New(
-		klient.OptionClient.WithBaseURL(httpServer.URL),
-	)
+	// klient.DefaultBaseURL = httpServer.URL
+	os.Setenv("API_GATEWAY_ADDRESS", httpServer.URL)
+
+	client, err := klient.New()
 	if err != nil {
 		fmt.Println(err)
 		return

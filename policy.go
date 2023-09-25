@@ -101,19 +101,27 @@ func retryPolicyOpts(ctx context.Context, resp *http.Response, err error, retryV
 		}
 	}
 
-	v, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
+	v, errPolicy := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
 
-	return retryError(v, err, resp, retryValue.Log)
+	return retryError(v, errPolicy, resp, retryValue.Log, err)
 }
 
-func retryError(retry bool, err error, resp *http.Response, log logz.Adapter) (bool, error) {
+func retryError(retry bool, err error, resp *http.Response, log logz.Adapter, errOrg error) (bool, error) {
 	if !retry {
 		return retry, err
 	}
 
 	response := LimitedResponse(resp)
 	if log != nil {
-		log.Warn("retrying", "response", string(response), "error", err)
+		errLog := err
+		if errLog == nil {
+			errLog = errOrg
+		}
+		log.Warn("retrying request", "response", string(response), "error", errLog)
+	}
+
+	if err == nil {
+		return retry, nil
 	}
 
 	return retry, fmt.Errorf("%w: [%s]", err, response)

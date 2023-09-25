@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-cleanhttp"
@@ -34,7 +35,7 @@ type Client struct {
 //
 // Default BaseURL is required, it can be disabled by setting DisableBaseURLCheck to true.
 func New(opts ...OptionClientFn) (*Client, error) {
-	logAdapter := logz.AdapterKV{Log: log.Logger}
+	logAdapter := logz.AdapterKV{Log: log.Logger, Caller: true}
 	o := optionClientValue{
 		PooledClient:   true,
 		MaxConnections: defaultMaxConnections,
@@ -67,6 +68,9 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	if o.BaseURL == "" {
 		baseURL := DefaultBaseURL
 		if baseURL == "" {
+			baseURL = os.Getenv("KLIENT_BASE_URL")
+		}
+		if baseURL == "" {
 			baseURL = os.Getenv("API_GATEWAY_ADDRESS")
 		}
 
@@ -95,6 +99,11 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		} else {
 			client = cleanhttp.DefaultClient()
 		}
+	}
+
+	// skip verify
+	if v, _ := strconv.ParseBool(os.Getenv("KLIENT_INSECURE_SKIP_VERIFY")); v {
+		o.InsecureSkipVerify = true
 	}
 
 	if o.InsecureSkipVerify {
@@ -153,6 +162,11 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 
 		client = retryClient.StandardClient()
+	}
+
+	// set timeout
+	if v, _ := time.ParseDuration(os.Getenv("KLIENT_TIMEOUT")); v > 0 {
+		o.Timeout = v
 	}
 
 	if o.Timeout > 0 {

@@ -9,6 +9,11 @@ import (
 	"github.com/worldline-go/logz"
 )
 
+type Null[T any] struct {
+	Value T
+	Valid bool
+}
+
 type optionRetryValue struct {
 	DisableRetry        Null[bool]
 	DisabledStatusCodes []int

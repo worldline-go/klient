@@ -63,7 +63,7 @@ func TestClient_Request(t *testing.T) {
 	defer httpServer.Close()
 
 	client, err := New(
-		OptionClient.WithBaseURL(httpServer.URL),
+		WithBaseURL(httpServer.URL),
 	)
 	if err != nil {
 		t.Errorf("NewClient() error = %v", err)
@@ -378,8 +378,8 @@ func TestClient_Do(t *testing.T) {
 				resp: new(map[string]interface{}),
 			},
 			optionClient: []OptionClientFn{
-				OptionClient.WithDisableRetry(true),
-				OptionClient.WithTimeout(100 * time.Millisecond),
+				WithDisableRetry(true),
+				WithTimeout(100 * time.Millisecond),
 			},
 			want: map[string]interface{}{
 				"request_id": "123+",
@@ -399,9 +399,9 @@ func TestClient_Do(t *testing.T) {
 
 			tt.optionClient = append(
 				tt.optionClient,
-				OptionClient.WithBaseURL(httpServer.URL),
-				OptionClient.WithRetryMax(tt.retryCount),
-				OptionClient.WithRetryOptions(tt.optionRetry...),
+				WithBaseURL(httpServer.URL),
+				WithRetryMax(tt.retryCount),
+				WithRetryOptions(tt.optionRetry...),
 			)
 
 			client, err := New(tt.optionClient...)

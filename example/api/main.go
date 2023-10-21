@@ -75,8 +75,9 @@ func main() {
 	logz.InitializeLog()
 
 	client, err := klient.New(
-		klient.OptionClient.WithBaseURL("https://expired.badssl.com/"),
-		// klient.OptionClient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		klient.WithBaseURL("https://api.punkapi.com/v2/"),
+		// klient.WithBaseURL("https://expired.badssl.com/"),
+		// klient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		// 	Level: slog.LevelDebug,
 		// }))),
 	)

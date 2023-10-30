@@ -18,7 +18,7 @@ go get github.com/worldline-go/klient
 Create a new client with a base url. Base url is mandatory in default also it can set with `API_GATEWAY_ADDRESS` environment variable.
 
 ```go
-client, err := klient.New(klient.OptionClient.WithBaseURL("https://api.punkapi.com/v2/"))
+client, err := klient.New(klient.WithBaseURL("https://api.punkapi.com/v2/"))
 if err != nil {
     // handle error
 }

@@ -101,6 +101,22 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
+	// disable retry
+	if !o.DisableRetry {
+		// create retry client
+		retryClient := retryablehttp.Client{
+			HTTPClient:   client,
+			Logger:       o.Logger,
+			RetryWaitMin: o.RetryWaitMin,
+			RetryWaitMax: o.RetryWaitMax,
+			RetryMax:     o.RetryMax,
+			CheckRetry:   o.RetryPolicy,
+			Backoff:      o.Backoff,
+		}
+
+		client = retryClient.StandardClient()
+	}
+
 	// skip verify
 	if v, _ := strconv.ParseBool(os.Getenv("KLIENT_INSECURE_SKIP_VERIFY")); v {
 		o.InsecureSkipVerify = true
@@ -146,22 +162,6 @@ func New(opts ...OptionClientFn) (*Client, error) {
 
 			client.Transport = transport
 		}
-	}
-
-	// disable retry
-	if !o.DisableRetry {
-		// create retry client
-		retryClient := retryablehttp.Client{
-			HTTPClient:   client,
-			Logger:       o.Logger,
-			RetryWaitMin: o.RetryWaitMin,
-			RetryWaitMax: o.RetryWaitMax,
-			RetryMax:     o.RetryMax,
-			CheckRetry:   o.RetryPolicy,
-			Backoff:      o.Backoff,
-		}
-
-		client = retryClient.StandardClient()
 	}
 
 	// set timeout

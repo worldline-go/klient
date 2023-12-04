@@ -127,3 +127,4 @@ if err != nil {
 | `KLIENT_BASE_URL`             | Base url of client same with `API_GATEWAY_ADDRESS` but more priority. |
 | `KLIENT_INSECURE_SKIP_VERIFY` | Skip tls verify. Ex `KLIENT_INSECURE_SKIP_VERIFY=true`                |
 | `KLIENT_TIMEOUT`              | Timeout for http client. Ex: `KLIENT_TIMEOUT=30s`                     |
+| `KLIENT_RETRY_DISABLE`        | Disable retry. Ex: `KLIENT_RETRY_DISABLE=true`                        |

@@ -60,6 +60,8 @@ type optionClientValue struct {
 	RetryLog bool
 	// OptionRetryFns is the retry options for default retry policy.
 	OptionRetryFns []OptionRetryFn
+	// DisableEnvValues is the flag to disable all env values check.
+	DisableEnvValues bool
 }
 
 // OptionClientFn is a function that configures the client.
@@ -199,5 +201,12 @@ func WithRetryLog(retryLog bool) OptionClientFn {
 func WithRetryOptions(opts ...OptionRetryFn) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.OptionRetryFns = append(options.OptionRetryFns, opts...)
+	}
+}
+
+// WithDisableEnvValues configures the client to disable all env values check.
+func WithDisableEnvValues(disableEnvValues bool) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.DisableEnvValues = disableEnvValues
 	}
 }

@@ -77,6 +77,7 @@ func main() {
 	client, err := klient.New(
 		klient.WithBaseURL("https://api.punkapi.com/v2/"),
 		// klient.WithBaseURL("https://expired.badssl.com/"),
+		// klient.WithDisableEnvValues(true),
 		// klient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		// 	Level: slog.LevelDebug,
 		// }))),

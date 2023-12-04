@@ -33,6 +33,7 @@ var (
 	EnvKlientBaseURLGlobal      = "API_GATEWAY_ADDRESS"
 	EnvKlientInsecureSkipVerify = "KLIENT_INSECURE_SKIP_VERIFY"
 	EnvKlientTimeout            = "KLIENT_TIMEOUT"
+	EnvKlientRetryDisable       = "KLIENT_RETRY_DISABLE"
 )
 
 type Client struct {
@@ -72,11 +73,15 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
+	if DisableEnvValues {
+		o.DisableEnvValues = true
+	}
+
 	var baseURL *url.URL
 	if o.BaseURL == "" {
 		baseURL := DefaultBaseURL
 
-		if !DisableEnvValues {
+		if !o.DisableEnvValues {
 			if baseURL == "" {
 				baseURL = os.Getenv(EnvKlientBaseURL)
 			}
@@ -113,7 +118,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	// skip verify
-	if !DisableEnvValues {
+	if !o.DisableEnvValues {
 		if v, _ := strconv.ParseBool(os.Getenv(EnvKlientInsecureSkipVerify)); v {
 			o.InsecureSkipVerify = true
 		}
@@ -135,7 +140,13 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
 	}
 
-	// disable retry
+	// disable
+	if !o.DisableEnvValues {
+		if v, _ := strconv.ParseBool(os.Getenv(EnvKlientRetryDisable)); v {
+			o.DisableRetry = true
+		}
+	}
+
 	if !o.DisableRetry {
 		// create retry client
 		retryClient := retryablehttp.Client{
@@ -178,7 +189,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	// set timeout
-	if !DisableEnvValues {
+	if !o.DisableEnvValues {
 		if v, _ := time.ParseDuration(os.Getenv(EnvKlientTimeout)); v > 0 {
 			o.Timeout = v
 		}

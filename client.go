@@ -23,8 +23,16 @@ var (
 	defaultRetryWaitMax = 30 * time.Second
 	defaultRetryMax     = 4
 
-	// DefaultBaseURL when empty os.Getenv("API_GATEWAY_ADDRESS") will use.
+	// DefaultBaseURL when empty "API_GATEWAY_ADDRESS" or "KLIENT_BASE_URL" env value will be used.
 	DefaultBaseURL = ""
+
+	// DisableEnvValues when true will disable all env values check.
+	DisableEnvValues = false
+
+	EnvKlientBaseURL            = "KLIENT_BASE_URL"
+	EnvKlientBaseURLGlobal      = "API_GATEWAY_ADDRESS"
+	EnvKlientInsecureSkipVerify = "KLIENT_INSECURE_SKIP_VERIFY"
+	EnvKlientTimeout            = "KLIENT_TIMEOUT"
 )
 
 type Client struct {
@@ -67,11 +75,14 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	var baseURL *url.URL
 	if o.BaseURL == "" {
 		baseURL := DefaultBaseURL
-		if baseURL == "" {
-			baseURL = os.Getenv("KLIENT_BASE_URL")
-		}
-		if baseURL == "" {
-			baseURL = os.Getenv("API_GATEWAY_ADDRESS")
+
+		if !DisableEnvValues {
+			if baseURL == "" {
+				baseURL = os.Getenv(EnvKlientBaseURL)
+			}
+			if baseURL == "" {
+				baseURL = os.Getenv(EnvKlientBaseURLGlobal)
+			}
 		}
 
 		o.BaseURL = baseURL
@@ -102,8 +113,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	// skip verify
-	if v, _ := strconv.ParseBool(os.Getenv("KLIENT_INSECURE_SKIP_VERIFY")); v {
-		o.InsecureSkipVerify = true
+	if !DisableEnvValues {
+		if v, _ := strconv.ParseBool(os.Getenv(EnvKlientInsecureSkipVerify)); v {
+			o.InsecureSkipVerify = true
+		}
 	}
 
 	if o.InsecureSkipVerify {
@@ -165,8 +178,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	// set timeout
-	if v, _ := time.ParseDuration(os.Getenv("KLIENT_TIMEOUT")); v > 0 {
-		o.Timeout = v
+	if !DisableEnvValues {
+		if v, _ := time.ParseDuration(os.Getenv(EnvKlientTimeout)); v > 0 {
+			o.Timeout = v
+		}
 	}
 
 	if o.Timeout > 0 {

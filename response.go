@@ -1,6 +1,7 @@
 package klient
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,6 +44,11 @@ func LimitedResponse(resp *http.Response) []byte {
 	}
 
 	v, _ := io.ReadAll(io.LimitReader(resp.Body, ResponseErrLimit))
+
+	bodyRemains, _ := io.ReadAll(resp.Body)
+	totalBody := append(v, bodyRemains...)
+
+	resp.Body = io.NopCloser(bytes.NewReader(totalBody))
 
 	return v
 }

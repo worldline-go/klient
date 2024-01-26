@@ -157,6 +157,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 			RetryMax:     o.RetryMax,
 			CheckRetry:   o.RetryPolicy,
 			Backoff:      o.Backoff,
+			ErrorHandler: PassthroughErrorHandler,
 		}
 
 		client = retryClient.StandardClient()

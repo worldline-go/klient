@@ -20,7 +20,7 @@ func TestClient_Request(t *testing.T) {
 	httpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// check request method
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(`{"error": "invalid request method"}`))
 			return
 		}
@@ -64,6 +64,7 @@ func TestClient_Request(t *testing.T) {
 
 	client, err := New(
 		WithBaseURL(httpServer.URL),
+		WithRetryMax(1),
 	)
 	if err != nil {
 		t.Errorf("NewClient() error = %v", err)
@@ -121,6 +122,40 @@ func TestClient_Request(t *testing.T) {
 
 					if m["request_id"] != "123+" {
 						return fmt.Errorf("invalid request id")
+					}
+
+					return nil
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test-2",
+			fields: fields{
+				HttpClient: client.HTTP,
+			},
+			args: args{
+				ctx:    context.Background(),
+				method: http.MethodGet,
+				path:   "/api/v1/test",
+				body:   bytes.NewBufferString(`{"id": "123"}`),
+				header: http.Header{
+					"X-Info": []string{"test"},
+				},
+				fn: func(resp *http.Response) error {
+					// check response status code
+					if resp.StatusCode != http.StatusInternalServerError {
+						return fmt.Errorf("invalid status code")
+					}
+
+					// get response body
+					var m map[string]interface{}
+					if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+						return fmt.Errorf("invalid response body, %w", err)
+					}
+
+					if m["error"] != "invalid request method" {
+						return fmt.Errorf("invalid request error")
 					}
 
 					return nil

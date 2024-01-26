@@ -38,7 +38,7 @@ func DoWithInf[T any](ctx context.Context, client *http.Client, r Requester[T]) 
 // Do sends an HTTP request and calls the response function with using http.Client.
 func Do(c *http.Client, req *http.Request, fn func(*http.Response) error) error {
 	httpResp, err := c.Do(req)
-	if err != nil {
+	if httpResp == nil && err != nil {
 		return fmt.Errorf("%w: %w", ErrRequest, err)
 	}
 

@@ -131,3 +131,11 @@ func retryError(retry bool, err error, resp *http.Response, log logz.Adapter, er
 
 	return retry, fmt.Errorf("%w: [%s]", err, response)
 }
+
+func PassthroughErrorHandler(resp *http.Response, err error, _ int) (*http.Response, error) {
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp, nil
+}

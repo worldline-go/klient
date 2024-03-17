@@ -205,6 +205,7 @@ func WithRetryOptions(opts ...OptionRetryFn) OptionClientFn {
 }
 
 // WithDisableEnvValues configures the client to disable all env values check.
+//   - API_GATEWAY_ADDRESS and KLIENT_* env values will be disabled.
 func WithDisableEnvValues(disableEnvValues bool) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.DisableEnvValues = disableEnvValues

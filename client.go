@@ -40,6 +40,20 @@ type Client struct {
 	HTTP *http.Client
 }
 
+// NewPlain creates a new http client with the some default disabled automatic features.
+//   - klient.WithDisableBaseURLCheck(true)
+//   - klient.WithDisableRetry(true)
+//   - klient.WithDisableEnvValues(true)
+func NewPlain(opts ...OptionClientFn) (*Client, error) {
+	opts = append([]OptionClientFn{
+		WithDisableBaseURLCheck(true),
+		WithDisableRetry(true),
+		WithDisableEnvValues(true),
+	}, opts...)
+
+	return New(opts...)
+}
+
 // New creates a new http client with the provided options.
 //
 // Default BaseURL is required, it can be disabled by setting DisableBaseURLCheck to true.

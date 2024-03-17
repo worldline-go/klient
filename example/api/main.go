@@ -74,14 +74,18 @@ func (c BeerAPI) GetBeer(ctx context.Context, request GetBeerRequest) (GetBeerRe
 func main() {
 	logz.InitializeLog()
 
-	client, err := klient.New(
-		klient.WithBaseURL("https://api.punkapi.com/v2/"),
-		// klient.WithBaseURL("https://expired.badssl.com/"),
-		// klient.WithDisableEnvValues(true),
-		// klient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		// 	Level: slog.LevelDebug,
-		// }))),
-	)
+	client, err := klient.Config{
+		BaseURL: "https://api.punkapi.com/v2/",
+	}.New()
+
+	// client, err := klient.New(
+	// 	klient.WithBaseURL("https://api.punkapi.com/v2/"),
+	// 	// klient.WithBaseURL("https://expired.badssl.com/"),
+	// 	// klient.WithDisableEnvValues(true),
+	// 	// klient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	// 	// 	Level: slog.LevelDebug,
+	// 	// }))),
+	// )
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create client")
 	}

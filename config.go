@@ -5,6 +5,8 @@ import "time"
 type Config struct {
 	BaseURL string `cfg:"base_url"`
 
+	Header map[string][]string `cfg:"header"`
+
 	Timeout             time.Duration `cfg:"timeout"`
 	DisableBaseURLCheck *bool         `cfg:"disable_base_url_check"`
 	DisableEnvValues    *bool         `cfg:"disable_env_values"`
@@ -16,7 +18,7 @@ type Config struct {
 	RetryWaitMax time.Duration `cfg:"retry_wait_max"`
 }
 
-func (c Config) New(options ...OptionClientFn) (*Client, error) {
+func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 	opts := []OptionClientFn{}
 
 	if c.BaseURL != "" {
@@ -55,7 +57,15 @@ func (c Config) New(options ...OptionClientFn) (*Client, error) {
 		opts = append(opts, WithRetryWaitMax(c.RetryWaitMax))
 	}
 
+	if len(c.Header) > 0 {
+		opts = append(opts, WithHeader(c.Header))
+	}
+
 	opts = append(opts, options...)
 
-	return New(opts...)
+	return opts
+}
+
+func (c Config) New(options ...OptionClientFn) (*Client, error) {
+	return New(c.Options(options...)...)
 }

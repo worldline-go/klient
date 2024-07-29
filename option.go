@@ -62,6 +62,9 @@ type optionClientValue struct {
 	OptionRetryFns []OptionRetryFn
 	// DisableEnvValues is the flag to disable all env values check.
 	DisableEnvValues bool
+
+	// Proxy for http(s) requests.
+	Proxy string
 }
 
 // OptionClientFn is a function that configures the client.
@@ -209,5 +212,11 @@ func WithRetryOptions(opts ...OptionRetryFn) OptionClientFn {
 func WithDisableEnvValues(disableEnvValues bool) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.DisableEnvValues = disableEnvValues
+	}
+}
+
+func WithProxy(proxy string) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.Proxy = proxy
 	}
 }

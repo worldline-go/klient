@@ -131,6 +131,20 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
+	if o.Proxy != "" {
+		u, err := url.Parse(o.Proxy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse proxy url: %w", err)
+		}
+
+		transport, ok := client.Transport.(*http.Transport)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast transport to http.Transport")
+		}
+
+		transport.Proxy = http.ProxyURL(u)
+	}
+
 	// skip verify
 	if !o.DisableEnvValues {
 		if v, _ := strconv.ParseBool(os.Getenv(EnvKlientInsecureSkipVerify)); v {

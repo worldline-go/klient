@@ -16,6 +16,8 @@ type Config struct {
 	RetryMax     int           `cfg:"retry_max"`
 	RetryWaitMin time.Duration `cfg:"retry_wait_min"`
 	RetryWaitMax time.Duration `cfg:"retry_wait_max"`
+
+	Proxy string `cfg:"proxy"`
 }
 
 func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
@@ -59,6 +61,10 @@ func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 
 	if len(c.Header) > 0 {
 		opts = append(opts, WithHeader(c.Header))
+	}
+
+	if c.Proxy != "" {
+		opts = append(opts, WithProxy(c.Proxy))
 	}
 
 	opts = append(opts, options...)

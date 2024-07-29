@@ -17,7 +17,7 @@ type BeerAPI struct {
 type RandomGet struct{}
 
 func (r RandomGet) Request(ctx context.Context) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "beers/random", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "breweries/random", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ type GetBeerRespond struct {
 func (c BeerAPI) GetBeer(ctx context.Context, request GetBeerRequest) (GetBeerRespond, error) {
 	var v []GetBeerRespond
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("beers/%s", request.ID), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("breweries/%s", request.ID), nil)
 	if err != nil {
 		return GetBeerRespond{}, err
 	}
@@ -75,11 +75,12 @@ func main() {
 	logz.InitializeLog()
 
 	client, err := klient.Config{
-		BaseURL: "https://api.punkapi.com/v2/",
+		BaseURL: "https://api.openbrewerydb.org/v1/",
+		// Proxy:   "http://localhost:9292",
 	}.New()
 
 	// client, err := klient.New(
-	// 	klient.WithBaseURL("https://api.punkapi.com/v2/"),
+	// 	klient.WithBaseURL("https://api.openbrewerydb.org/v1/"),
 	// 	// klient.WithBaseURL("https://expired.badssl.com/"),
 	// 	// klient.WithDisableEnvValues(true),
 	// 	// klient.WithLogger(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -94,7 +95,7 @@ func main() {
 
 	beerAPI := BeerAPI{client}
 	beer, err := beerAPI.GetRandomBeer(ctx)
-	// beer, err := beerAPI.GetBeer(ctx, GetBeerRequest{ID: "1"})
+	// beer, err := beerAPI.GetBeer(ctx, GetBeerRequest{ID: "5128df48-79fc-4f0f-8b52-d06be54d0cec"})
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to get random beer")
 	}

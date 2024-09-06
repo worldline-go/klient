@@ -104,6 +104,44 @@ func WithHeader(header http.Header) OptionClientFn {
 	}
 }
 
+func WithHeaderAdd(header http.Header) OptionClientFn {
+	return func(o *optionClientValue) {
+		if o.Header == nil {
+			o.Header = make(http.Header)
+		}
+
+		for key, values := range header {
+			for _, value := range values {
+				o.Header.Add(key, value)
+			}
+		}
+	}
+}
+
+func WithHeaderSet(header http.Header) OptionClientFn {
+	return func(o *optionClientValue) {
+		if o.Header == nil {
+			o.Header = make(http.Header)
+		}
+
+		for key, values := range header {
+			o.Header.Set(key, values[0])
+		}
+	}
+}
+
+func WithHeaderDel(keys ...string) OptionClientFn {
+	return func(o *optionClientValue) {
+		if o.Header == nil {
+			o.Header = make(http.Header)
+		}
+
+		for _, key := range keys {
+			o.Header.Del(key)
+		}
+	}
+}
+
 // WithMaxConnections configures the client to use the provided maximum number of idle connections.
 func WithMaxConnections(maxConnections int) OptionClientFn {
 	return func(o *optionClientValue) {

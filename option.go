@@ -65,6 +65,9 @@ type optionClientValue struct {
 
 	// Proxy for http(s) requests.
 	Proxy string
+
+	// Inject extra content to request (e.g. tracing propagation).
+	Inject func(ctx context.Context, req *http.Request)
 }
 
 // OptionClientFn is a function that configures the client.
@@ -256,5 +259,16 @@ func WithDisableEnvValues(disableEnvValues bool) OptionClientFn {
 func WithProxy(proxy string) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.Proxy = proxy
+	}
+}
+
+// WithInject configures the client to use the provided inject function.
+//
+//	func(ctx context.Context, req *http.Request) {
+//	  otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+//	}
+func WithInject(inject func(ctx context.Context, req *http.Request)) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.Inject = inject
 	}
 }

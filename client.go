@@ -195,6 +195,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		Base:    client.Transport,
 		Header:  o.Header,
 		BaseURL: baseURL,
+		Inject:  o.Inject,
 	}
 
 	if len(o.RoundTripperList) > 0 {

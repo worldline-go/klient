@@ -1,6 +1,7 @@
 package klient
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 )
@@ -15,6 +16,9 @@ type TransportKlient struct {
 	Header http.Header
 	// BaseURL is the base URL for relative requests.
 	BaseURL *url.URL
+
+	// Inject extra content to request (e.g. tracing propagation).
+	Inject func(ctx context.Context, req *http.Request)
 }
 
 var _ http.RoundTripper = (*TransportKlient)(nil)
@@ -50,6 +54,10 @@ func (t *TransportKlient) SetHeader(req *http.Request) {
 		for k, v := range header {
 			req.Header[k] = v
 		}
+	}
+
+	if t.Inject != nil {
+		t.Inject(ctx, req)
 	}
 }
 

@@ -75,7 +75,7 @@ func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 	}
 
 	if c.TLSConfig != nil {
-		opts = append(opts, WithTLSConfig(*c.TLSConfig))
+		opts = append(opts, WithTLSConfig(c.TLSConfig))
 	}
 
 	opts = append(opts, options...)

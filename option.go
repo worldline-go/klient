@@ -73,7 +73,7 @@ type optionClientValue struct {
 	HTTP2 bool
 
 	// TLSConfig is the TLS configuration.
-	TLSConfig TLSConfig
+	TLSConfig *TLSConfig
 }
 
 // OptionClientFn is a function that configures the client.
@@ -287,7 +287,7 @@ func WithHTTP2(v bool) OptionClientFn {
 	}
 }
 
-func WithTLSConfig(tlsConfig TLSConfig) OptionClientFn {
+func WithTLSConfig(tlsConfig *TLSConfig) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.TLSConfig = tlsConfig
 	}

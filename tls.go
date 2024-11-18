@@ -8,8 +8,6 @@ import (
 
 // TLSConfig contains options for TLS authentication.
 type TLSConfig struct {
-	// Enabled is whether TLS is enabled.
-	Enabled bool `cfg:"enabled"`
 	// CertFile is the path to the client's TLS certificate.
 	// Should be use with KeyFile.
 	CertFile string `cfg:"cert_file"`
@@ -25,10 +23,6 @@ type TLSConfig struct {
 //
 // If the TLSConfig is empty, nil is returned.
 func (t TLSConfig) Generate() (*tls.Config, error) {
-	if !t.Enabled {
-		return nil, nil
-	}
-
 	opts := []tlscfg.Opt{}
 
 	// load client cert

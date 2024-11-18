@@ -166,7 +166,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
-	if o.TLSConfig.Enabled {
+	if o.TLSConfig != nil {
 		tlsClientConfig, err := o.TLSConfig.Generate()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate tls config: %w", err)

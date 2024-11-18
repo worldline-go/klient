@@ -23,9 +23,7 @@ type Config struct {
 	TLSConfig *TLSConfig `cfg:"tls"`
 }
 
-func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
-	opts := []OptionClientFn{}
-
+func (c Config) Options(opts ...OptionClientFn) []OptionClientFn {
 	if c.BaseURL != "" {
 		opts = append(opts, WithBaseURL(c.BaseURL))
 	}
@@ -63,7 +61,7 @@ func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 	}
 
 	if len(c.Header) > 0 {
-		opts = append(opts, WithHeader(c.Header))
+		opts = append(opts, WithHeaderSet(c.Header))
 	}
 
 	if c.Proxy != "" {
@@ -77,8 +75,6 @@ func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 	if c.TLSConfig != nil {
 		opts = append(opts, WithTLSConfig(c.TLSConfig))
 	}
-
-	opts = append(opts, options...)
 
 	return opts
 }

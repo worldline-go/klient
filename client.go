@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
 	"github.com/worldline-go/logz"
+	"golang.org/x/net/http2"
 )
 
 var (
@@ -124,14 +126,26 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	// create client
 	client := o.HTTPClient
 	if client == nil {
-		if o.PooledClient {
+		switch {
+		case o.HTTP2:
+			client = &http.Client{
+				Transport: &http2.Transport{
+					AllowHTTP: true,
+					DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+						return net.Dial(network, addr)
+					},
+					IdleConnTimeout: 90 * time.Second,
+				},
+			}
+		case o.PooledClient:
 			client = cleanhttp.DefaultPooledClient()
-		} else {
+		default:
 			client = cleanhttp.DefaultClient()
 		}
 	}
 
-	if o.Proxy != "" {
+	// make always after client creation
+	if !o.HTTP2 && o.Proxy != "" {
 		u, err := url.Parse(o.Proxy)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse proxy url: %w", err)
@@ -152,20 +166,49 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
-	if o.InsecureSkipVerify {
-		//nolint:forcetypeassert // clear
-		tlsClientConfig := client.Transport.(*http.Transport).TLSClientConfig
-		if tlsClientConfig == nil {
-			tlsClientConfig = &tls.Config{
-				//nolint:gosec // user defined
-				InsecureSkipVerify: true,
-			}
-		} else {
-			tlsClientConfig.InsecureSkipVerify = true
+	if o.TLSConfig.Enabled {
+		tlsClientConfig, err := o.TLSConfig.Generate()
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate tls config: %w", err)
 		}
 
-		//nolint:forcetypeassert // clear
-		client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+		if o.HTTP2 {
+			client.Transport.(*http2.Transport).TLSClientConfig = tlsClientConfig
+		} else {
+			client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+		}
+	}
+
+	if o.InsecureSkipVerify {
+		if o.HTTP2 {
+			//nolint:forcetypeassert // clear
+			tlsClientConfig := client.Transport.(*http2.Transport).TLSClientConfig
+			if tlsClientConfig == nil {
+				tlsClientConfig = &tls.Config{
+					//nolint:gosec // user defined
+					InsecureSkipVerify: true,
+				}
+			} else {
+				tlsClientConfig.InsecureSkipVerify = true
+			}
+
+			//nolint:forcetypeassert // clear
+			client.Transport.(*http2.Transport).TLSClientConfig = tlsClientConfig
+		} else {
+			//nolint:forcetypeassert // clear
+			tlsClientConfig := client.Transport.(*http.Transport).TLSClientConfig
+			if tlsClientConfig == nil {
+				tlsClientConfig = &tls.Config{
+					//nolint:gosec // user defined
+					InsecureSkipVerify: true,
+				}
+			} else {
+				tlsClientConfig.InsecureSkipVerify = true
+			}
+
+			//nolint:forcetypeassert // clear
+			client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+		}
 	}
 
 	// disable

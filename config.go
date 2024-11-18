@@ -18,6 +18,9 @@ type Config struct {
 	RetryWaitMax time.Duration `cfg:"retry_wait_max"`
 
 	Proxy string `cfg:"proxy"`
+	HTTP2 *bool  `cfg:"http2"`
+
+	TLSConfig *TLSConfig `cfg:"tls"`
 }
 
 func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
@@ -65,6 +68,14 @@ func (c Config) Options(options ...OptionClientFn) []OptionClientFn {
 
 	if c.Proxy != "" {
 		opts = append(opts, WithProxy(c.Proxy))
+	}
+
+	if c.HTTP2 != nil {
+		opts = append(opts, WithHTTP2(*c.HTTP2))
+	}
+
+	if c.TLSConfig != nil {
+		opts = append(opts, WithTLSConfig(*c.TLSConfig))
 	}
 
 	opts = append(opts, options...)

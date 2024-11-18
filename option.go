@@ -63,11 +63,17 @@ type optionClientValue struct {
 	// DisableEnvValues is the flag to disable all env values check.
 	DisableEnvValues bool
 
-	// Proxy for http(s) requests.
+	// Proxy for http(s) requests. Not used for http2.
 	Proxy string
 
 	// Inject extra content to request (e.g. tracing propagation).
 	Inject func(ctx context.Context, req *http.Request)
+
+	// HTTP2 is the flag to enable http2 transport.
+	HTTP2 bool
+
+	// TLSConfig is the TLS configuration.
+	TLSConfig TLSConfig
 }
 
 // OptionClientFn is a function that configures the client.
@@ -270,5 +276,19 @@ func WithProxy(proxy string) OptionClientFn {
 func WithInject(inject func(ctx context.Context, req *http.Request)) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.Inject = inject
+	}
+}
+
+// WithHTTP2 configures the client to use the provided http2 transport.
+//   - WithProxy option will be ignored.
+func WithHTTP2(v bool) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.HTTP2 = v
+	}
+}
+
+func WithTLSConfig(tlsConfig TLSConfig) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.TLSConfig = tlsConfig
 	}
 }

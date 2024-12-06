@@ -277,7 +277,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}, nil
 }
 
-// OptionPre will add the preOpts to the opts as the first element.
-func OptionPre(opts []OptionClientFn, preOpts ...OptionClientFn) []OptionClientFn {
+// OptionsPre will add the preOpts to the opts as the first element.
+func OptionsPre(opts []OptionClientFn, preOpts ...OptionClientFn) []OptionClientFn {
 	return append(preOpts, opts...)
 }

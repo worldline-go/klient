@@ -23,62 +23,64 @@ type Config struct {
 	TLSConfig *TLSConfig `cfg:"tls"`
 }
 
-func (c Config) Options(opts ...OptionClientFn) []OptionClientFn {
-	if c.BaseURL != "" {
-		opts = append(opts, WithBaseURL(c.BaseURL))
-	}
+func (c *Config) ToOption() OptionClientFn {
+	return func(o *optionClientValue) {
+		if c.BaseURL != "" {
+			o.BaseURL = c.BaseURL
+		}
 
-	if c.Timeout != 0 {
-		opts = append(opts, WithTimeout(c.Timeout))
-	}
+		if c.Timeout != 0 {
+			o.Timeout = c.Timeout
+		}
 
-	if c.DisableBaseURLCheck != nil {
-		opts = append(opts, WithDisableBaseURLCheck(*c.DisableBaseURLCheck))
-	}
+		if c.DisableBaseURLCheck != nil {
+			o.DisableBaseURLCheck = *c.DisableBaseURLCheck
+		}
 
-	if c.DisableEnvValues != nil {
-		opts = append(opts, WithDisableEnvValues(*c.DisableEnvValues))
-	}
+		if c.DisableEnvValues != nil {
+			o.DisableEnvValues = *c.DisableEnvValues
+		}
 
-	if c.InsecureSkipVerify != nil {
-		opts = append(opts, WithInsecureSkipVerify(*c.InsecureSkipVerify))
-	}
+		if c.InsecureSkipVerify != nil {
+			o.InsecureSkipVerify = *c.InsecureSkipVerify
+		}
 
-	if c.DisableRetry != nil {
-		opts = append(opts, WithDisableRetry(*c.DisableRetry))
-	}
+		if c.DisableRetry != nil {
+			o.DisableRetry = *c.DisableRetry
+		}
 
-	if c.RetryMax != 0 {
-		opts = append(opts, WithRetryMax(c.RetryMax))
-	}
+		if c.RetryMax != 0 {
+			o.RetryMax = c.RetryMax
+		}
 
-	if c.RetryWaitMin != 0 {
-		opts = append(opts, WithRetryWaitMin(c.RetryWaitMin))
-	}
+		if c.RetryWaitMin != 0 {
+			o.RetryWaitMin = c.RetryWaitMin
+		}
 
-	if c.RetryWaitMax != 0 {
-		opts = append(opts, WithRetryWaitMax(c.RetryWaitMax))
-	}
+		if c.RetryWaitMax != 0 {
+			o.RetryWaitMax = c.RetryWaitMax
+		}
 
-	if len(c.Header) > 0 {
-		opts = append(opts, WithHeaderSet(c.Header))
-	}
+		if len(c.Header) > 0 {
+			o.Header = c.Header
+		}
 
-	if c.Proxy != "" {
-		opts = append(opts, WithProxy(c.Proxy))
-	}
+		if c.Proxy != "" {
+			o.Proxy = c.Proxy
+		}
 
-	if c.HTTP2 != nil {
-		opts = append(opts, WithHTTP2(*c.HTTP2))
-	}
+		if c.HTTP2 != nil {
+			o.HTTP2 = *c.HTTP2
+		}
 
-	if c.TLSConfig != nil {
-		opts = append(opts, WithTLSConfig(c.TLSConfig))
+		if c.TLSConfig != nil {
+			o.TLSConfig = c.TLSConfig
+		}
 	}
-
-	return opts
 }
 
-func (c Config) New(options ...OptionClientFn) (*Client, error) {
-	return New(c.Options(options...)...)
+// New creates a new client with the configuration.
+//   - Add pre defined options
+func (c *Config) New(options ...OptionClientFn) (*Client, error) {
+	return New(append(options, c.ToOption())...)
 }

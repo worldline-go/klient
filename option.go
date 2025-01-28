@@ -21,6 +21,8 @@ type optionClientValue struct {
 	//
 	// Last function will be called first.
 	RoundTripperList []RoundTripperFunc
+	// BaseTransport for change base transport of http client.
+	BaseTransport http.RoundTripper
 	// Ctx for RoundTripper.
 	Ctx context.Context
 	// MaxConnections is the maximum number of idle (keep-alive) connections.
@@ -290,5 +292,11 @@ func WithHTTP2(v bool) OptionClientFn {
 func WithTLSConfig(tlsConfig *TLSConfig) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.TLSConfig = tlsConfig
+	}
+}
+
+func WithBaseTransport(baseTransport http.RoundTripper) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.BaseTransport = baseTransport
 	}
 }

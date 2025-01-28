@@ -8,14 +8,19 @@ import (
 	"github.com/worldline-go/klient"
 )
 
+var BeerAPIConfig = klient.Config{
+	BaseURL: "https://api.openbrewerydb.org/v1/",
+	Header: http.Header{
+		"Content-Type": []string{"application/json"},
+	},
+}
+
 type BeerAPI struct {
 	client *klient.Client
 }
 
 func New(opts ...klient.OptionClientFn) (*BeerAPI, error) {
-	client, err := klient.Config{
-		BaseURL: "https://api.openbrewerydb.org/v1/",
-	}.New(opts...)
+	client, err := klient.New(BeerAPIConfig.ToOption())
 	if err != nil {
 		return nil, err
 	}

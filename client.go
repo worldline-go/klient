@@ -234,8 +234,13 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client = retryClient.StandardClient()
 	}
 
+	baseTransport := client.Transport
+	if o.BaseTransport != nil {
+		baseTransport = o.BaseTransport
+	}
+
 	client.Transport = &TransportKlient{
-		Base:    client.Transport,
+		Base:    baseTransport,
 		Header:  o.Header,
 		BaseURL: baseURL,
 		Inject:  o.Inject,
@@ -275,9 +280,4 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	return &Client{
 		HTTP: client,
 	}, nil
-}
-
-// OptionsPre will add the preOpts to the opts as the first element.
-func OptionsPre(opts []OptionClientFn, preOpts ...OptionClientFn) []OptionClientFn {
-	return append(preOpts, opts...)
 }

@@ -20,7 +20,7 @@ type BeerAPI struct {
 }
 
 func New(opts ...klient.OptionClientFn) (*BeerAPI, error) {
-	client, err := klient.New(BeerAPIConfig.ToOption())
+	client, err := klient.New(append(opts, BeerAPIConfig.ToOption())...)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/worldline-go/klient"
 	"github.com/worldline-go/klient/klienttest"
 )
 
@@ -49,18 +50,15 @@ func TestBeerAPI_GetBeer(t *testing.T) {
 		},
 	}
 
-	client, err := klienttest.New(BeerAPIConfig.ToOption())
+	transport := new(klienttest.TransportHandler)
+	c, err := New(BeerAPIConfig.ToOption(), klient.WithBaseTransport(transport))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	c := BeerAPI{
-		client: client.Client(),
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client.SetHandler(tt.handler)
+			transport.SetHandler(tt.handler)
 
 			got, err := c.GetBeer(context.Background(), tt.args.request)
 			if (err != nil) != tt.wantErr {

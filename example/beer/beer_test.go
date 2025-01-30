@@ -28,7 +28,7 @@ func TestBeerAPI_GetBeer(t *testing.T) {
 					r.URL.Path != "/v1/breweries/1" ||
 					r.Header.Get("Content-Type") != "application/json" ||
 					r.Method != http.MethodGet {
-					w.WriteHeader(http.StatusNotFound)
+					w.WriteHeader(http.StatusInternalServerError)
 					_, _ = w.Write([]byte(`{"error": "not found"}`))
 
 					return

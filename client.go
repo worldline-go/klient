@@ -144,6 +144,10 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 	}
 
+	if o.BaseTransport != nil {
+		client.Transport = o.BaseTransport
+	}
+
 	// make always after client creation
 	if !o.HTTP2 && o.Proxy != "" {
 		u, err := url.Parse(o.Proxy)
@@ -234,13 +238,8 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client = retryClient.StandardClient()
 	}
 
-	baseTransport := client.Transport
-	if o.BaseTransport != nil {
-		baseTransport = o.BaseTransport
-	}
-
 	client.Transport = &TransportKlient{
-		Base:    baseTransport,
+		Base:    client.Transport,
 		Header:  o.Header,
 		BaseURL: baseURL,
 		Inject:  o.Inject,

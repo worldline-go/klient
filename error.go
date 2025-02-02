@@ -3,6 +3,7 @@ package klient
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -29,7 +30,7 @@ func (e *ResponseError) Error() string {
 
 // ErrResponse returns an error with the limited response body.
 func ErrResponse(resp *http.Response) error {
-	partialBody := LimitedResponse(resp)
+	partialBody, _ := io.ReadAll(io.LimitReader(resp.Body, ResponseErrLimit))
 
 	return &ResponseError{
 		StatusCode: resp.StatusCode,

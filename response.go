@@ -38,6 +38,8 @@ func ResponseFuncJSON(data interface{}) func(*http.Response) error {
 }
 
 // LimitedResponse not close body, retry library draining it.
+//   - Return limited response body
+//   - Ready all body and assign it back to resp.Body
 func LimitedResponse(resp *http.Response) []byte {
 	if resp == nil {
 		return nil
@@ -45,16 +47,7 @@ func LimitedResponse(resp *http.Response) []byte {
 
 	v, _ := io.ReadAll(io.LimitReader(resp.Body, ResponseErrLimit))
 
-	bodyRemains, _ := io.ReadAll(resp.Body)
-	totalBody := append(v, bodyRemains...)
-
-	resp.Body = io.NopCloser(bytes.NewReader(totalBody))
+	resp.Body = NewMultiReader(io.NopCloser(bytes.NewReader(v)), resp.Body)
 
 	return v
-}
-
-// DrainBody reads the entire content of r and then closes the underlying io.ReadCloser.
-func DrainBody(body io.ReadCloser) {
-	defer body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(body, ResponseErrLimit))
 }

@@ -78,6 +78,10 @@ type optionClientValue struct {
 	TLSConfig *TLSConfig
 }
 
+func OptionsPre(opts []OptionClientFn, preOpts ...OptionClientFn) []OptionClientFn {
+	return append(preOpts, opts...)
+}
+
 // OptionClientFn is a function that configures the client.
 type OptionClientFn func(*optionClientValue)
 

@@ -1,6 +1,6 @@
 module github.com/worldline-go/klient
 
-go 1.21
+go 1.24
 
 require (
 	github.com/go-test/deep v1.1.1
@@ -9,13 +9,12 @@ require (
 	github.com/rs/zerolog v1.33.0
 	github.com/twmb/tlscfg v1.2.1
 	github.com/worldline-go/logz v0.5.1
-	golang.org/x/net v0.24.0
+	golang.org/x/net v0.37.0
 )
 
 require (
-	github.com/fatih/color v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	golang.org/x/sys v0.22.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
 )

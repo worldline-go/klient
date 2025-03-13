@@ -23,7 +23,7 @@ type Config struct {
 	TLSConfig *TLSConfig `cfg:"tls"`
 }
 
-func (c *Config) ToOption() OptionClientFn {
+func (c Config) ToOption() OptionClientFn {
 	return func(o *optionClientValue) {
 		if c.BaseURL != "" {
 			o.BaseURL = c.BaseURL

@@ -79,7 +79,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	if o.RetryPolicy == nil {
 		if o.RetryLog {
 			options := []OptionRetryFn{
-				OptionRetry.WithRetryLog(logAdapter),
+				OptionRetry.WithRetryLog(o.Logger),
 			}
 			options = append(options, o.OptionRetryFns...)
 

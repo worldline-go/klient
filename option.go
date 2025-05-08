@@ -27,8 +27,8 @@ type optionClientValue struct {
 	Ctx context.Context
 	// MaxConnections is the maximum number of idle (keep-alive) connections.
 	MaxConnections int
-	// Logger is the customer logger instance of retryablehttp. Can be either Logger or LeveledLogger
-	Logger interface{}
+	// Logger is the customer logger instance of retryablehttp.
+	Logger logz.Adapter
 	// InsecureSkipVerify is the flag to skip TLS verification.
 	InsecureSkipVerify bool
 

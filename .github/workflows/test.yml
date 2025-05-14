@@ -38,7 +38,7 @@ jobs:
           -Dsonar.go.tests.reportPaths=test-report.out
           -Dsonar.go.golangci-lint.reportPaths=golangci-lint-report.out
           -Dsonar.sources=.
-          -Dsonar.exclusions=**/vendor/**,**/*_test.go
+          -Dsonar.exclusions=**/vendor/**,**/*_test.go,**/example/**
           -Dsonar.tests=.
           -Dsonar.test.inclusions=**/*_test.go
       env:

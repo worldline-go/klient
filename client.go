@@ -177,16 +177,33 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		}
 
 		if o.HTTP2 {
-			client.Transport.(*http2.Transport).TLSClientConfig = tlsClientConfig
+			if transport, ok := client.Transport.(*http2.Transport); ok {
+				transport.TLSClientConfig = tlsClientConfig
+			}
 		} else {
-			client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+			if transport, ok := client.Transport.(*http.Transport); ok {
+				transport.TLSClientConfig = tlsClientConfig
+			}
 		}
 	}
 
 	if o.InsecureSkipVerify {
 		if o.HTTP2 {
-			//nolint:forcetypeassert // clear
-			tlsClientConfig := client.Transport.(*http2.Transport).TLSClientConfig
+			if transport, ok := client.Transport.(*http2.Transport); ok {
+				tlsClientConfig := transport.TLSClientConfig
+				if tlsClientConfig == nil {
+					tlsClientConfig = &tls.Config{
+						//nolint:gosec // user defined
+						InsecureSkipVerify: true,
+					}
+				} else {
+					tlsClientConfig.InsecureSkipVerify = true
+				}
+
+				transport.TLSClientConfig = tlsClientConfig
+			}
+		} else if transport, ok := client.Transport.(*http.Transport); ok {
+			tlsClientConfig := transport.TLSClientConfig
 			if tlsClientConfig == nil {
 				tlsClientConfig = &tls.Config{
 					//nolint:gosec // user defined
@@ -196,22 +213,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 				tlsClientConfig.InsecureSkipVerify = true
 			}
 
-			//nolint:forcetypeassert // clear
-			client.Transport.(*http2.Transport).TLSClientConfig = tlsClientConfig
-		} else {
-			//nolint:forcetypeassert // clear
-			tlsClientConfig := client.Transport.(*http.Transport).TLSClientConfig
-			if tlsClientConfig == nil {
-				tlsClientConfig = &tls.Config{
-					//nolint:gosec // user defined
-					InsecureSkipVerify: true,
-				}
-			} else {
-				tlsClientConfig.InsecureSkipVerify = true
-			}
-
-			//nolint:forcetypeassert // clear
-			client.Transport.(*http.Transport).TLSClientConfig = tlsClientConfig
+			transport.TLSClientConfig = tlsClientConfig
 		}
 	}
 

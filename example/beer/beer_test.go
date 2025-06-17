@@ -1,7 +1,6 @@
 package beer
 
 import (
-	"context"
 	"net/http"
 	"reflect"
 	"testing"
@@ -60,7 +59,7 @@ func TestBeerAPI_GetBeer(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			transport.SetHandler(tt.handler)
 
-			got, err := c.GetBeer(context.Background(), tt.args.request)
+			got, err := c.GetBeer(t.Context(), tt.args.request)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("BeerAPI.GetBeer() error = %v, wantErr %v", err, tt.wantErr)
 				return

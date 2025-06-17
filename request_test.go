@@ -96,7 +96,7 @@ func TestClient_Request(t *testing.T) {
 				HttpClient: client.HTTP,
 			},
 			args: args{
-				ctx:    context.Background(),
+				ctx:    t.Context(),
 				method: http.MethodPost,
 				path:   "/api/v1/test",
 				body:   bytes.NewBufferString(`{"id": "123"}`),
@@ -135,7 +135,7 @@ func TestClient_Request(t *testing.T) {
 				HttpClient: client.HTTP,
 			},
 			args: args{
-				ctx:    context.Background(),
+				ctx:    t.Context(),
 				method: http.MethodGet,
 				path:   "/api/v1/test",
 				body:   bytes.NewBufferString(`{"id": "123"}`),
@@ -323,7 +323,7 @@ func TestClient_Do(t *testing.T) {
 		{
 			name: "DoWithFunc",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				req: TestRequest{
 					ID: "123",
 
@@ -348,7 +348,7 @@ func TestClient_Do(t *testing.T) {
 		{
 			name: "DoWithFunc ctx header",
 			args: args{
-				ctx: context.WithValue(context.Background(), TransportHeaderKey, http.Header{
+				ctx: context.WithValue(t.Context(), TransportHeaderKey, http.Header{
 					"X-Ctx": []string{"test"},
 				}),
 				req: TestRequest{
@@ -371,7 +371,7 @@ func TestClient_Do(t *testing.T) {
 		{
 			name: "DoWithFunc with retry disable",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				req: TestRequest{
 					ID: "123",
 				},
@@ -385,9 +385,23 @@ func TestClient_Do(t *testing.T) {
 			// long:       true,
 		},
 		{
+			name: "DoWithFunc with retry disable ctx",
+			args: args{
+				// ctx: t.Context(),
+				ctx: CtxWithRetryPolicy(t.Context(), OptionRetry.WithRetryDisable()),
+				req: TestRequest{
+					ID: "123",
+				},
+				resp: new(map[string]interface{}),
+			},
+			wantErr:    true,
+			retryCount: 5,
+			// long:       true,
+		},
+		{
 			name: "DoWithFunc with retry",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				req: TestRequest{
 					ID: "123",
 				},
@@ -406,7 +420,7 @@ func TestClient_Do(t *testing.T) {
 		{
 			name: "Timeout test",
 			args: args{
-				ctx: context.Background(),
+				ctx: t.Context(),
 				req: TestRequest{
 					ID: "444",
 				},
@@ -447,7 +461,7 @@ func TestClient_Do(t *testing.T) {
 
 			ctx := tt.args.ctx
 			if ctx == nil {
-				ctx = context.Background()
+				ctx = t.Context()
 			}
 
 			*tt.args.resp, err = DoWithInf(ctx, client.HTTP, tt.args.req)

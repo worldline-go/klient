@@ -57,7 +57,7 @@ func TestReader(t *testing.T) {
 		// merge 2 readers together
 		r := NewMultiReader(io.NopCloser(bytes.NewReader(partData)), io.NopCloser(readerData))
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		r.SetContext(ctx)
 		cancel()
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"slices"
+
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/worldline-go/logz"
 )
@@ -28,6 +30,12 @@ type OptionRetryFn func(*optionRetryValue)
 type OptionRetryHolder struct{}
 
 var OptionRetry = OptionRetryHolder{}
+
+type ctxKey string
+
+const (
+	CtxKeyRetryPolicy ctxKey = "retry_policy"
+)
 
 // WithOptionRetry configures the retry policy directly.
 //
@@ -62,16 +70,26 @@ func (OptionRetryHolder) WithRetryLog(log logz.Adapter) OptionRetryFn {
 	}
 }
 
-func NewRetryPolicy(opts ...OptionRetryFn) retryablehttp.CheckRetry {
-	o := optionRetryValue{}
+func NewRetryValue(opts ...OptionRetryFn) *OptionRetryValue {
+	o := &optionRetryValue{}
 
 	for _, opt := range opts {
-		opt(&o)
+		opt(o)
 	}
 
+	return o
+}
+
+func NewRetryPolicy(opts ...OptionRetryFn) retryablehttp.CheckRetry {
+	o := NewRetryValue(opts...)
+
 	return func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		return retryPolicyOpts(ctx, resp, err, &o)
+		return retryPolicyOpts(ctx, resp, err, o)
 	}
+}
+
+func CtxWithRetryPolicy(ctx context.Context, opts ...OptionRetryFn) context.Context {
+	return context.WithValue(ctx, CtxKeyRetryPolicy, NewRetryValue(opts...))
 }
 
 // RetryPolicy provides a default callback for Client.CheckRetry, which
@@ -88,21 +106,21 @@ func retryPolicyOpts(ctx context.Context, resp *http.Response, err error, retryV
 		return false, err
 	}
 
+	if retryValueCtx, _ := ctx.Value(CtxKeyRetryPolicy).(*optionRetryValue); retryValueCtx != nil {
+		retryValue = retryValueCtx
+	}
+
 	if retryValue != nil {
 		if retryValue.DisableRetry.Valid && retryValue.DisableRetry.Value {
 			return false, nil
 		}
 
-		for _, disabledStatusCode := range retryValue.DisabledStatusCodes {
-			if resp.StatusCode == disabledStatusCode {
-				return false, nil
-			}
+		if slices.Contains(retryValue.DisabledStatusCodes, resp.StatusCode) {
+			return false, nil
 		}
 
-		for _, enabledStatusCode := range retryValue.EnabledStatusCodes {
-			if resp.StatusCode == enabledStatusCode {
-				return true, fmt.Errorf("force retried HTTP status %s: [%s]", resp.Status, LimitedResponse(resp))
-			}
+		if slices.Contains(retryValue.EnabledStatusCodes, resp.StatusCode) {
+			return true, fmt.Errorf("force retried HTTP status %s: [%s]", resp.Status, LimitedResponse(resp))
 		}
 	}
 

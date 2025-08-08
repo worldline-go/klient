@@ -114,7 +114,9 @@ func retryPolicyOpts(ctx context.Context, resp *http.Response, err error, retryV
 		if retryValue.DisableRetry.Valid && retryValue.DisableRetry.Value {
 			return false, nil
 		}
+	}
 
+	if retryValue != nil && err == nil && resp != nil {
 		if slices.Contains(retryValue.DisabledStatusCodes, resp.StatusCode) {
 			return false, nil
 		}

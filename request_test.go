@@ -490,3 +490,26 @@ func TestClient_Do(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_Invalid(t *testing.T) {
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, "test", nil)
+	if err != nil {
+		t.Fatalf("http.NewRequestWithContext() error = %v", err)
+	}
+
+	client, err := New(
+		WithBaseURL("DUMMY://example.com"),
+	)
+	if err != nil {
+		t.Fatalf("NewClient() error = %v", err)
+	}
+
+	err = client.Do(req, func(resp *http.Response) error {
+		t.Error("should not reach here")
+		return nil
+	})
+
+	if err == nil {
+		t.Fatalf("Client.Do() error = %v, wantErr %v", err, true)
+	}
+}

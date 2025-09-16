@@ -304,3 +304,13 @@ func WithBaseTransport(baseTransport http.RoundTripper) OptionClientFn {
 		options.BaseTransport = baseTransport
 	}
 }
+
+func WithUserAgent(userAgent string) OptionClientFn {
+	return func(o *optionClientValue) {
+		if o.Header == nil {
+			o.Header = make(http.Header)
+		}
+
+		o.Header.Set("User-Agent", userAgent)
+	}
+}

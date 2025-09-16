@@ -2,6 +2,7 @@ package klient
 
 import (
 	"context"
+	"maps"
 	"net/http"
 	"net/url"
 )
@@ -51,9 +52,7 @@ func (t *TransportKlient) SetHeader(req *http.Request) {
 	}
 
 	if header, ok := ctx.Value(TransportHeaderKey).(http.Header); ok {
-		for k, v := range header {
-			req.Header[k] = v
-		}
+		maps.Copy(req.Header, header)
 	}
 
 	if t.Inject != nil {

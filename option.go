@@ -60,6 +60,10 @@ type optionClientValue struct {
 	Backoff retryablehttp.Backoff
 	// RetryLog is the flag to enable retry log of the http body. Default is true.
 	RetryLog bool
+	// RetryTimeout is the timeout for each individual retry attempt.
+	// If a single request attempt exceeds this duration, it will be canceled
+	// and the retry logic will attempt the request again (up to RetryMax times).
+	RetryTimeout time.Duration
 	// OptionRetryFns is the retry options for default retry policy.
 	OptionRetryFns []OptionRetryFn
 	// DisableEnvValues is the flag to disable all env values check.
@@ -242,6 +246,18 @@ func WithBackoff(backoff retryablehttp.Backoff) OptionClientFn {
 func WithRetryPolicy(retryPolicy retryablehttp.CheckRetry) OptionClientFn {
 	return func(options *optionClientValue) {
 		options.RetryPolicy = retryPolicy
+	}
+}
+
+// WithRetryTimeout sets the timeout for each individual retry attempt.
+// If a single request takes longer than this duration, it will be canceled
+// and trigger a retry (up to RetryMax times).
+//
+// Example: WithRetryTimeout(2*time.Second) means each attempt will timeout
+// after 2 seconds, and the request will be retried if it hasn't succeeded yet.
+func WithRetryTimeout(retryTimeout time.Duration) OptionClientFn {
+	return func(options *optionClientValue) {
+		options.RetryTimeout = retryTimeout
 	}
 }
 

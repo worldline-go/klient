@@ -16,6 +16,9 @@ type Config struct {
 	RetryMax     int           `cfg:"retry_max"`
 	RetryWaitMin time.Duration `cfg:"retry_wait_min"`
 	RetryWaitMax time.Duration `cfg:"retry_wait_max"`
+	RetryTimeout time.Duration `cfg:"retry_timeout"`
+
+	PooledClient *bool `cfg:"pooled_client"`
 
 	Proxy string `cfg:"proxy"`
 	HTTP2 *bool  `cfg:"http2"`
@@ -59,6 +62,14 @@ func (c Config) ToOption() OptionClientFn {
 
 		if c.RetryWaitMax != 0 {
 			o.RetryWaitMax = c.RetryWaitMax
+		}
+
+		if c.RetryTimeout != 0 {
+			o.RetryTimeout = c.RetryTimeout
+		}
+
+		if c.PooledClient != nil {
+			o.PooledClient = *c.PooledClient
 		}
 
 		if len(c.Header) > 0 {

@@ -2,9 +2,11 @@ package klient
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 // TransportKlient is an http.RoundTripper that
@@ -90,4 +92,33 @@ func cloneRequest(r *http.Request) *http.Request {
 	}
 
 	return r2
+}
+
+// retryTimeoutTransport wraps an http.RoundTripper to add a timeout to each request attempt.
+// This is used to implement per-attempt timeouts for retry logic.
+type retryTimeoutTransport struct {
+	base    http.RoundTripper
+	timeout time.Duration
+}
+
+var _ http.RoundTripper = (*retryTimeoutTransport)(nil)
+
+// RoundTrip implements http.RoundTripper and adds a timeout context to each request.
+func (t *retryTimeoutTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Create a timeout context for this specific attempt
+	ctx, cancel := context.WithTimeout(req.Context(), t.timeout)
+	defer cancel()
+
+	// Clone the request with the timeout context
+	req2 := req.Clone(ctx)
+
+	resp, err := t.base.RoundTrip(req2)
+	if err != nil {
+		if req.Context().Err() == nil && isTimeoutError(err) {
+			// If the parent context is still valid, return a context deadline exceeded error
+			return resp, fmt.Errorf("retry timeout; %w", err)
+		}
+	}
+
+	return resp, err
 }

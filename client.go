@@ -3,6 +3,7 @@ package klient
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -132,9 +133,23 @@ func New(opts ...OptionClientFn) (*Client, error) {
 				Transport: &http2.Transport{
 					AllowHTTP: true,
 					DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
-						return net.Dial(network, addr)
+						var dialer net.Dialer
+
+						conn, err := dialer.DialContext(ctx, network, addr)
+						if err != nil {
+							return nil, err
+						}
+						// If TLS config is provided, wrap the connection
+						if cfg != nil {
+							return tls.Client(conn, cfg), nil
+						}
+
+						return conn, nil
 					},
-					IdleConnTimeout: 90 * time.Second,
+					IdleConnTimeout:            90 * time.Second,
+					ReadIdleTimeout:            30 * time.Second,
+					PingTimeout:                15 * time.Second,
+					StrictMaxConcurrentStreams: true,
 				},
 			}
 		case o.PooledClient:
@@ -225,6 +240,16 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	}
 
 	if !o.DisableRetry {
+		// Wrap the transport with retry timeout BEFORE creating the retry client
+		// This ensures each attempt gets its own timeout
+		if o.RetryTimeout > 0 {
+			baseTransport := client.Transport
+			client.Transport = &retryTimeoutTransport{
+				base:    baseTransport,
+				timeout: o.RetryTimeout,
+			}
+		}
+
 		// create retry client
 		retryClient := retryablehttp.Client{
 			HTTPClient:   client,
@@ -235,6 +260,25 @@ func New(opts ...OptionClientFn) (*Client, error) {
 			CheckRetry:   o.RetryPolicy,
 			Backoff:      o.Backoff,
 			ErrorHandler: PassthroughErrorHandler,
+		}
+
+		// If RetryTimeout is set, wrap the check retry to allow retry on timeout
+		if o.RetryTimeout > 0 {
+			originalCheckRetry := retryClient.CheckRetry
+			retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+				// If there's a context deadline exceeded error but the parent context is still valid,
+				// it means the timeout came from our per-request timeout, so we should retry
+				if err != nil && ctx.Err() == nil {
+					// Check if the error is a timeout/deadline error
+					if isTimeoutError(err) {
+						// Allow retry on timeout
+						return true, nil
+					}
+				}
+
+				// Otherwise use the original retry policy
+				return originalCheckRetry(ctx, resp, err)
+			}
 		}
 
 		client = retryClient.StandardClient()
@@ -281,4 +325,24 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	return &Client{
 		HTTP: client,
 	}, nil
+}
+
+// isTimeoutError checks if an error is a timeout or deadline exceeded error.
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for context deadline exceeded
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	// Check for net.Error with Timeout() == true
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	return false
 }

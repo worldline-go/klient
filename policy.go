@@ -126,6 +126,10 @@ func retryPolicyOpts(ctx context.Context, resp *http.Response, err error, retryV
 		}
 	}
 
+	if err != nil && ctx.Err() == nil && isTimeoutError(err) {
+		return true, err
+	}
+
 	v, errPolicy := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
 
 	return retryError(v, errPolicy, resp, retryValue.Log, err)

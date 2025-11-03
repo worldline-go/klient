@@ -262,25 +262,6 @@ func New(opts ...OptionClientFn) (*Client, error) {
 			ErrorHandler: PassthroughErrorHandler,
 		}
 
-		// If RetryTimeout is set, wrap the check retry to allow retry on timeout
-		if o.RetryTimeout > 0 {
-			originalCheckRetry := retryClient.CheckRetry
-			retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-				// If there's a context deadline exceeded error but the parent context is still valid,
-				// it means the timeout came from our per-request timeout, so we should retry
-				if err != nil && ctx.Err() == nil {
-					// Check if the error is a timeout/deadline error
-					if isTimeoutError(err) {
-						// Allow retry on timeout
-						return true, nil
-					}
-				}
-
-				// Otherwise use the original retry policy
-				return originalCheckRetry(ctx, resp, err)
-			}
-		}
-
 		client = retryClient.StandardClient()
 	}
 

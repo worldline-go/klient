@@ -16,7 +16,6 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/rs/zerolog/log"
 	"github.com/worldline-go/logz"
-	"golang.org/x/net/http2"
 )
 
 var (
@@ -128,20 +127,6 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	client := o.HTTPClient
 	if client == nil {
 		switch {
-		case o.HTTP2:
-			client = &http.Client{
-				Transport: &http2.Transport{
-					AllowHTTP: true,
-					DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
-						var dialer net.Dialer
-						return dialer.DialContext(ctx, network, addr)
-					},
-					IdleConnTimeout:            90 * time.Second,
-					ReadIdleTimeout:            30 * time.Second,
-					PingTimeout:                15 * time.Second,
-					StrictMaxConcurrentStreams: true,
-				},
-			}
 		case o.PooledClient:
 			client = cleanhttp.DefaultPooledClient()
 		default:
@@ -153,8 +138,21 @@ func New(opts ...OptionClientFn) (*Client, error) {
 		client.Transport = o.BaseTransport
 	}
 
+	if o.HTTP2 {
+		var protocols http.Protocols
+		protocols.SetUnencryptedHTTP2(true)
+
+		transport, ok := client.Transport.(*http.Transport)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast transport to http.Transport")
+		}
+
+		transport.ForceAttemptHTTP2 = true
+		transport.Protocols = &protocols
+	}
+
 	// make always after client creation
-	if !o.HTTP2 && o.Proxy != "" {
+	if o.Proxy != "" {
 		u, err := url.Parse(o.Proxy)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse proxy url: %w", err)
@@ -181,33 +179,13 @@ func New(opts ...OptionClientFn) (*Client, error) {
 			return nil, fmt.Errorf("failed to generate tls config: %w", err)
 		}
 
-		if o.HTTP2 {
-			if transport, ok := client.Transport.(*http2.Transport); ok {
-				transport.TLSClientConfig = tlsClientConfig
-			}
-		} else {
-			if transport, ok := client.Transport.(*http.Transport); ok {
-				transport.TLSClientConfig = tlsClientConfig
-			}
+		if transport, ok := client.Transport.(*http.Transport); ok {
+			transport.TLSClientConfig = tlsClientConfig
 		}
 	}
 
 	if o.InsecureSkipVerify {
-		if o.HTTP2 {
-			if transport, ok := client.Transport.(*http2.Transport); ok {
-				tlsClientConfig := transport.TLSClientConfig
-				if tlsClientConfig == nil {
-					tlsClientConfig = &tls.Config{
-						//nolint:gosec // user defined
-						InsecureSkipVerify: true,
-					}
-				} else {
-					tlsClientConfig.InsecureSkipVerify = true
-				}
-
-				transport.TLSClientConfig = tlsClientConfig
-			}
-		} else if transport, ok := client.Transport.(*http.Transport); ok {
+		if transport, ok := client.Transport.(*http.Transport); ok {
 			tlsClientConfig := transport.TLSClientConfig
 			if tlsClientConfig == nil {
 				tlsClientConfig = &tls.Config{
@@ -232,7 +210,9 @@ func New(opts ...OptionClientFn) (*Client, error) {
 	if !o.DisableRetry {
 		// Wrap the transport with retry timeout BEFORE creating the retry client
 		// This ensures each attempt gets its own timeout
-		if o.RetryTimeout > 0 {
+		// Note: Skip retryTimeoutTransport for HTTP2 as it doesn't work well with
+		// HTTP2's persistent connection state management
+		if o.RetryTimeout > 0 && !o.HTTP2 {
 			baseTransport := client.Transport
 			client.Transport = &retryTimeoutTransport{
 				base:    baseTransport,

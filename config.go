@@ -16,6 +16,7 @@ type Config struct {
 	RetryMax     int           `cfg:"retry_max"`
 	RetryWaitMin time.Duration `cfg:"retry_wait_min"`
 	RetryWaitMax time.Duration `cfg:"retry_wait_max"`
+	// RetryTimeout not works with http2
 	RetryTimeout time.Duration `cfg:"retry_timeout"`
 
 	PooledClient *bool `cfg:"pooled_client"`

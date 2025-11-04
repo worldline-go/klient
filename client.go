@@ -134,17 +134,7 @@ func New(opts ...OptionClientFn) (*Client, error) {
 					AllowHTTP: true,
 					DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 						var dialer net.Dialer
-
-						conn, err := dialer.DialContext(ctx, network, addr)
-						if err != nil {
-							return nil, err
-						}
-						// If TLS config is provided, wrap the connection
-						if cfg != nil {
-							return tls.Client(conn, cfg), nil
-						}
-
-						return conn, nil
+						return dialer.DialContext(ctx, network, addr)
 					},
 					IdleConnTimeout:            90 * time.Second,
 					ReadIdleTimeout:            30 * time.Second,

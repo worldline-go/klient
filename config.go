@@ -5,7 +5,7 @@ import "time"
 type Config struct {
 	BaseURL string `cfg:"base_url"`
 
-	Header map[string][]string `cfg:"header"`
+	Header map[string][]string `cfg:"header" log:"-"`
 
 	Timeout             time.Duration `cfg:"timeout"`
 	DisableBaseURLCheck *bool         `cfg:"disable_base_url_check"`
